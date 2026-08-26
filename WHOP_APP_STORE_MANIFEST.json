@@ -1,0 +1,51 @@
+{
+  "name": "Fitz - Fitness Coaching & Member Retention",
+  "slug": "fitz",
+  "category": "Fitness & Health",
+  "description": "The dedicated fitness coaching workspace for Whop communities. Prescribe custom workout splits, track nutrition macros, receive weekly photo check-ins, and prevent member churn with automated at-risk alerts.",
+  "routes": {
+    "dashboard_url": "/dashboard/[companyId]",
+    "experience_url": "/experiences/[experienceId]"
+  },
+  "permissions": [
+    "users:read",
+    "memberships:read",
+    "experiences:read"
+  ],
+  "monetization": {
+    "type": "in_app_subscription",
+    "tiers": [
+      {
+        "id": "free",
+        "name": "Free Tier",
+        "price": 0,
+        "features": [
+          "Up to 5 active clients",
+          "Custom workout split builder",
+          "Daily nutrition macro targets",
+          "Weekly progress check-in logger"
+        ]
+      },
+      {
+        "id": "plan_fitz_pro",
+        "name": "Fitz Pro",
+        "price": 2900,
+        "currency": "usd",
+        "billing_period": "monthly",
+        "features": [
+          "Unlimited active coaching clients",
+          "Real-time live check-in activity feed",
+          "Automated at-risk churn detection alerts",
+          "Direct Whop native chat re-engagement link",
+          "Physique photo timeline comparison"
+        ]
+      }
+    ]
+  },
+  "compliance": {
+    "tenant_isolation": "3-layer fail-closed multi-tenancy (Whop Auth + Scoped Query + Postgres RLS)",
+    "data_privacy": "Physique photos isolated to private tenant path storage",
+    "empty_states_supported": true,
+    "csp_frame_ancestors": "whop.com and *.whop.com"
+  }
+}

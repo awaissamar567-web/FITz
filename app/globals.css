@@ -1,0 +1,256 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   WHOP BRAND TYPOGRAPHY: ACID GROTESK & INTER
+   ========================================================================== */
+
+/* Acid Grotesk - Primary Whop Display Font */
+@font-face {
+  font-family: "Acid Grotesk";
+  src: url("/fonts/acid-grotesk/FFF-AcidGrotesk-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Acid Grotesk";
+  src: url("/fonts/acid-grotesk/FFF-AcidGrotesk-Book.otf") format("opentype");
+  font-weight: 350;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Acid Grotesk";
+  src: url("/fonts/acid-grotesk/FFF-AcidGrotesk-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Acid Grotesk";
+  src: url("/fonts/acid-grotesk/FFF-AcidGrotesk-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Acid Grotesk";
+  src: url("/fonts/acid-grotesk/FFF-AcidGrotesk-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Acid Grotesk";
+  src: url("/fonts/acid-grotesk/FFF-AcidGrotesk-ExtraBold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Acid Grotesk";
+  src: url("/fonts/acid-grotesk/FFF-AcidGrotesk-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Inter - Primary Whop Body & Interface Font */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/Inter-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/Inter-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/Inter-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/Inter-SemiBold.otf") format("opentype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/Inter-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/Inter-ExtraBold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter/Inter-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==========================================================================
+   WHOP FROSTED UI TOKENS & BASE RESETS
+   ========================================================================== */
+
+:root {
+  --font-display: "Acid Grotesk", system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  --bg-canvas: #09090b;
+  --bg-frosted-surface: rgba(18, 18, 22, 0.75);
+  --bg-frosted-card: rgba(24, 24, 30, 0.65);
+  --bg-frosted-hover: rgba(32, 32, 40, 0.85);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-highlight: rgba(255, 255, 255, 0.16);
+
+  --whop-blue: #1754d8;
+  --whop-blue-hover: #154ac0;
+  --whop-orange: #ff6243;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(23, 84, 216, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 90%, rgba(255, 98, 67, 0.04), transparent);
+  background-attachment: fixed;
+  color: #f4f4f5;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Whop Typography Hierarchy */
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+p, span, button, input, textarea, select, .font-sans {
+  font-family: var(--font-sans);
+}
+
+code, kbd, samp, pre, .font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ==========================================================================
+   FROSTED GLASS UTILITIES
+   ========================================================================== */
+
+.frosted-glass {
+  background: var(--bg-frosted-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.frosted-card {
+  background: var(--bg-frosted-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.frosted-card:hover {
+  background: var(--bg-frosted-hover);
+  border-color: var(--border-glass-highlight);
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+.frosted-modal {
+  background: rgba(14, 14, 18, 0.95);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.8), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+.frosted-input {
+  background: rgba(18, 18, 24, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.15s ease;
+}
+
+.frosted-input:focus {
+  border-color: #1754d8;
+  box-shadow: 0 0 0 2px rgba(23, 84, 216, 0.25);
+  background: rgba(22, 22, 30, 0.95);
+}
+
+.frosted-btn-primary {
+  background: #1754d8;
+  color: #ffffff;
+  box-shadow: 0 4px 14px -2px rgba(23, 84, 216, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.frosted-btn-primary:hover {
+  background: #154ac0;
+  box-shadow: 0 6px 20px -2px rgba(23, 84, 216, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.35);
+}
+
+.frosted-btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Custom placeholder styling */
+::placeholder {
+  color: #71717a;
+  opacity: 1;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

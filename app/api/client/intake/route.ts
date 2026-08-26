@@ -1,0 +1,67 @@
+import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
+import { getClientByWhopUserId, updateClientIntake } from "@/lib/services/clients";
+import { getOrCreateCompany } from "@/lib/services/companies";
+
+export async function POST(req: NextRequest) {
+  try {
+    const headerList = await headers();
+    const rawToken = headerList.get("x-whop-user-token") || headerList.get("authorization")?.replace("Bearer ", "");
+    const testMockHeader = headerList.get("x-test-auth");
+    const devUserId = headerList.get("x-dev-user-id");
+    const userId = rawToken ? extractUserIdFromToken(rawToken) : devUserId;
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized: Missing user token" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { experienceId, companyId, display_name, fullName, name, goal, stats, experience_level, equipment, limitations } = body;
+    const expId = experienceId || companyId || "exp_default";
+
+    if (!goal) {
+      return NextResponse.json({ error: "Missing required intake fields" }, { status: 400 });
+    }
+
+    // Verify member access
+    const access = await evaluateWhopAccess(userId, expId, testMockHeader);
+    if (!access.has_access) {
+      return NextResponse.json({ error: "Forbidden: No access to this experience" }, { status: 403 });
+    }
+
+    // Resolve company
+    const targetCompanyId = companyId || "biz_default_coach";
+    const company = await getOrCreateCompany(targetCompanyId);
+    if (!company) {
+      return NextResponse.json({ error: "Company not found" }, { status: 404 });
+    }
+
+    // Resolve client
+    let client = await getClientByWhopUserId(company.id, userId);
+    if (!client) {
+      // Auto-create client row if not exists
+      const { createOrReactivateClient } = await import("@/lib/services/clients");
+      client = await createOrReactivateClient(company.id, userId, expId);
+    }
+
+    if (!client) {
+      return NextResponse.json({ error: "Failed to resolve client record" }, { status: 500 });
+    }
+
+    // Update intake data with strict field allowlist
+    const updatedClient = await updateClientIntake(company.id, client.id, {
+      display_name: display_name || fullName || name || undefined,
+      goal,
+      stats: stats || {},
+      experience_level: experience_level || "intermediate",
+      equipment: equipment || { gymAccess: true },
+      limitations: limitations || null,
+    });
+
+    return NextResponse.json({ success: true, client: updatedClient }, { status: 200 });
+  } catch (error) {
+    console.error("[Intake API] Error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
