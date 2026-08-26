@@ -29,8 +29,20 @@ export async function getCurrentPlan(
   }
 
   // Fallback to local memory plan
-  const key = `${companyId}:${clientId}`;
-  return memoryPlans.get(key) || null;
+  const cleanId = companyId.replace(/^comp_/, "");
+  const cleanClientId = clientId.replace(/^client_/, "");
+  return (
+    memoryPlans.get(`${companyId}:${clientId}`) ||
+    memoryPlans.get(`comp_${cleanId}:${clientId}`) ||
+    memoryPlans.get(`${cleanId}:${clientId}`) ||
+    memoryPlans.get(`${companyId}:${cleanClientId}`) ||
+    memoryPlans.get(`comp_${cleanId}:${cleanClientId}`) ||
+    memoryPlans.get(`${cleanId}:${cleanClientId}`) ||
+    memoryPlans.get(`${companyId}:client_${cleanClientId}`) ||
+    memoryPlans.get(`comp_${cleanId}:client_${cleanClientId}`) ||
+    memoryPlans.get(`${cleanId}:client_${cleanClientId}`) ||
+    null
+  );
 }
 
 /**
@@ -108,7 +120,17 @@ export async function savePlan(
     updated_at: new Date().toISOString(),
   };
 
-  memoryPlans.set(key, mockPlan);
+  const cleanId = companyId.replace(/^comp_/, "");
+  const cleanClientId = clientId.replace(/^client_/, "");
+  memoryPlans.set(`${companyId}:${clientId}`, mockPlan);
+  memoryPlans.set(`comp_${cleanId}:${clientId}`, mockPlan);
+  memoryPlans.set(`${cleanId}:${clientId}`, mockPlan);
+  memoryPlans.set(`${companyId}:${cleanClientId}`, mockPlan);
+  memoryPlans.set(`comp_${cleanId}:${cleanClientId}`, mockPlan);
+  memoryPlans.set(`${cleanId}:${cleanClientId}`, mockPlan);
+  memoryPlans.set(`${companyId}:client_${cleanClientId}`, mockPlan);
+  memoryPlans.set(`comp_${cleanId}:client_${cleanClientId}`, mockPlan);
+  memoryPlans.set(`${cleanId}:client_${cleanClientId}`, mockPlan);
   return mockPlan;
 }
 

@@ -66,12 +66,20 @@ export async function getClientByWhopUserId(
     console.warn("[Clients] getClientByWhopUserId remote error:", err);
   }
 
+  const cleanCompId = companyId.replace(/^comp_/, "");
   for (const client of memoryClients.values()) {
     const compMatches =
       client.company_id === companyId ||
       client.company_id === `comp_${companyId}` ||
-      `comp_${client.company_id}` === companyId;
-    if (compMatches && client.whop_user_id === whopUserId) {
+      `comp_${client.company_id}` === companyId ||
+      client.company_id.replace(/^comp_/, "") === cleanCompId;
+    if (
+      compMatches &&
+      (client.whop_user_id === whopUserId ||
+        client.whop_user_id === `user_${whopUserId}` ||
+        `user_${client.whop_user_id}` === whopUserId ||
+        client.id === whopUserId)
+    ) {
       return client;
     }
   }
@@ -275,8 +283,13 @@ export async function updateClientIntake(
     joined_at: new Date().toISOString(),
   };
 
-  const key = `${companyId}:${clientId.replace("client_", "")}`;
-  memoryClients.set(key, updatedClient);
+  const cleanCompId = companyId.replace(/^comp_/, "");
+  const whopUid = clientId.replace(/^client_/, "");
+  memoryClients.set(`${companyId}:${whopUid}`, updatedClient);
+  memoryClients.set(`comp_${cleanCompId}:${whopUid}`, updatedClient);
+  memoryClients.set(`${cleanCompId}:${whopUid}`, updatedClient);
+  memoryClients.set(clientId, updatedClient);
+  memoryClients.set(`client_${whopUid}`, updatedClient);
   return updatedClient;
 }
 

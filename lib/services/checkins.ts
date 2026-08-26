@@ -95,11 +95,15 @@ export async function listCheckins(
   return memoryCheckins
     .filter(
       (c) =>
-        c.company_id === companyId &&
+        (c.company_id === companyId ||
+          c.company_id === `comp_${companyId}` ||
+          `comp_${c.company_id}` === companyId ||
+          c.company_id.replace(/^comp_/, "") === companyId.replace(/^comp_/, "")) &&
         (!clientId ||
           c.client_id === clientId ||
           c.client_id === `client_${clientId}` ||
-          `client_${c.client_id}` === clientId)
+          `client_${c.client_id}` === clientId ||
+          c.client_id.replace(/^client_/, "") === clientId.replace(/^client_/, ""))
     )
     .slice(0, limit);
 }
