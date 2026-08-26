@@ -18,7 +18,7 @@ export function PaywallModal({ isOpen, onClose, activeCount }: PaywallModalProps
 
   const proPlanCheckoutUrl =
     process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL ||
-    "https://whop.com/alpha-desk-a604/api-app-tf-h2-bk5s-mu-v3-uo-fi-tz-pro-plan/";
+    "https://whop.com/alpha-desk-a604/api-app-gtq-zd2-hl-cz-yjr-a-fi-tz-pro-plan/";
 
   const handleStartInAppCheckout = () => {
     // Attempt native parent postMessage for Whop iframe environment
