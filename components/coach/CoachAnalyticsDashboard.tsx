@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { EnrichedClient } from "@/components/coach/ClientListTable";
 import { Company } from "@/types/database";
 import { RealtimeActivityFeed } from "@/components/coach/RealtimeActivityFeed";
+import { CheckCircle2, AlertCircle, Sparkles, ChevronRight, X, ArrowRight, ShieldCheck, Dumbbell, Users } from "lucide-react";
 
 interface CoachAnalyticsDashboardProps {
   companyId: string;
@@ -23,6 +24,7 @@ export function CoachAnalyticsDashboard({
   onSelectClient,
 }: CoachAnalyticsDashboardProps) {
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>("30d");
+  const [showChecklist, setShowChecklist] = useState(true);
 
   const activeClients = clients.filter((c) => c.status === "active");
   const atRiskClients = clients.filter((c) => c.status === "at_risk");
@@ -133,6 +135,91 @@ export function CoachAnalyticsDashboard({
           })}
         </div>
       </div>
+
+      {/* -----------------------------------------------------------------------
+          COACH WEEKLY OPERATING CHECKLIST (Manus Audit Recommendation)
+          ----------------------------------------------------------------------- */}
+      {showChecklist && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1754d8]/10 via-[#0c0c0e]/90 to-[#0c0c0e]/90 border border-[#1754d8]/30 shadow-xl shadow-black/40 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-[#1754d8]/20 text-[#3b82f6] border border-[#1754d8]/30">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-semibold text-white tracking-tight flex items-center gap-2">
+                  Weekly Operating Checklist
+                  <span className="text-3xs font-mono px-2 py-0.5 rounded-full bg-[#1754d8]/25 text-[#3b82f6] border border-[#1754d8]/40">
+                    3 of 5 completed
+                  </span>
+                </h3>
+                <p className="text-3xs text-zinc-400 mt-0.5">
+                  Keep your Whop coaching business on track with zero manual guesswork.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowChecklist(false)}
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] transition-colors"
+              title="Minimize checklist"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Checklist Items */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+            {/* Step 1: Cadence Config */}
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 min-w-0">
+                <span className="text-3xs font-medium text-white block truncate">Coaching Cadence</span>
+                <span className="text-3xs text-emerald-400 font-mono block">Weekly ({company?.units || "kg"}) • Ready</span>
+              </div>
+            </div>
+
+            {/* Step 2: Templates Ready */}
+            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 min-w-0">
+                <span className="text-3xs font-medium text-white block truncate">Workout Split Templates</span>
+                <span className="text-3xs text-emerald-400 font-mono block">4 Pre-built Splits Ready</span>
+              </div>
+            </div>
+
+            {/* Step 3: Pending Intake */}
+            <div
+              onClick={() => onNavigateToTab("clients")}
+              className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-start justify-between gap-2 cursor-pointer hover:bg-amber-950/30 transition-all group"
+            >
+              <div className="flex items-start gap-2.5 min-w-0">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 min-w-0">
+                  <span className="text-3xs font-medium text-amber-200 block truncate">1 Member Awaiting Intake</span>
+                  <span className="text-3xs text-amber-400/90 font-mono block">Emma Watson (1d ago)</span>
+                </div>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
+            </div>
+
+            {/* Step 4: Churn Intervention */}
+            <div
+              onClick={() => onNavigateToTab("retention")}
+              className="p-3 rounded-xl bg-red-950/20 border border-red-500/30 flex items-start justify-between gap-2 cursor-pointer hover:bg-red-950/30 transition-all group"
+            >
+              <div className="flex items-start gap-2.5 min-w-0">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <div className="space-y-0.5 min-w-0">
+                  <span className="text-3xs font-medium text-red-200 block truncate">1 At-Risk Churn Alert</span>
+                  <span className="text-3xs text-red-400/90 font-mono block">Sarah Jenkins (12d overdue)</span>
+                </div>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-red-400 group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* -----------------------------------------------------------------------
           2. KEY PERFORMANCE INDICATOR (KPI) METRIC CARDS (Minimalist, Vector-Clean)

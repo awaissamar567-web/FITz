@@ -148,7 +148,7 @@ export default function HomePage() {
                   className="p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] active:scale-[0.98] border border-white/[0.06] text-center space-y-0.5 transition-all"
                 >
                   <span className="text-xs font-medium text-white block">Sarah Jenkins</span>
-                  <span className="text-3xs text-amber-400 font-mono">At-Risk (8d ago)</span>
+                  <span className="text-3xs text-amber-400 font-mono">At-Risk (12d ago)</span>
                 </Link>
 
                 <Link
