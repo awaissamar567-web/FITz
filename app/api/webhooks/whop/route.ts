@@ -155,7 +155,10 @@ export async function POST(req: NextRequest) {
       data.is_app_subscription === true ||
       data.product_id === "fitz_pro" ||
       data.plan_id === "plan_fitz_pro" ||
+      data.plan_id === "plan_mliEb2HaYIFBZ" ||
+      data.product_id === "plan_mliEb2HaYIFBZ" ||
       data.package_id === "fitz_pro" ||
+      (Boolean(process.env.WHOP_PRO_PLAN_ID) && (data.plan_id === process.env.WHOP_PRO_PLAN_ID || data.product_id === process.env.WHOP_PRO_PLAN_ID)) ||
       (Boolean(process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID) && data.product_id === process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID);
 
     if (!whopCompanyId) {
