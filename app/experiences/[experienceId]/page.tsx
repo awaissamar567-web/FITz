@@ -19,11 +19,19 @@ export default async function ClientExperiencePage({
   searchParams,
 }: ClientExperiencePageProps) {
   const { experienceId } = await params;
-  const sParams = await searchParams;
-  const isDemo = sParams?.demo === "true";
+  const sParams = searchParams ? await searchParams : {};
+  const isDemo = sParams?.demo === "true" || experienceId.startsWith("exp_");
 
   // Derive tenant company ID from experience or default sandbox coach
-  const companyId = isDemo ? "biz_coach_alex" : "biz_default";
+  const companyId =
+    isDemo ||
+    experienceId.includes("marcus") ||
+    experienceId.includes("sarah") ||
+    experienceId.includes("david") ||
+    experienceId.includes("emma") ||
+    experienceId.includes("liam")
+      ? "biz_coach_alex"
+      : "biz_default";
 
   let authContext;
   try {
@@ -61,6 +69,9 @@ export default async function ClientExperiencePage({
 
   // Fetch or create initial client record for this member
   let client = await getClientByWhopUserId(company.id, authContext.userId);
+  if (!client) {
+    client = await getClientByWhopUserId(company.id, experienceId);
+  }
   if (!client) {
     client = await createOrReactivateClient(company.id, authContext.userId, experienceId);
   }

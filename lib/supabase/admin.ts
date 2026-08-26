@@ -68,6 +68,17 @@ class MockTable {
   }
 
   eq(column: string, value: any) {
+    if ((column === "company_id" || column === "whop_company_id") && typeof value === "string") {
+      const cleanVal = value.replace(/^(comp_|biz_)/, "");
+      this.filters.push((row) => {
+        if (row[column] === value) return true;
+        if (typeof row[column] === "string") {
+          return row[column].replace(/^(comp_|biz_)/, "") === cleanVal;
+        }
+        return false;
+      });
+      return this;
+    }
     this.filters.push((row) => row[column] === value);
     return this;
   }

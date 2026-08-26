@@ -43,6 +43,211 @@ const DAYS_OF_WEEK: DayOfWeek[] = [
   "Sunday",
 ];
 
+interface ProgramTemplate {
+  id: string;
+  name: string;
+  description: string;
+  macros: { calories: string; protein: string; carbs: string; fats: string };
+  schedule: { [day in DayOfWeek]: { splitName: string; exercises: ExerciseItem[] } };
+}
+
+const PREBUILT_TEMPLATES: Record<string, ProgramTemplate> = {
+  ppl: {
+    id: "ppl",
+    name: "Push / Pull / Legs (PPL - 6-Day)",
+    description: "High-volume hypertrophy split targeting chest, back, and legs twice weekly.",
+    macros: { calories: "2800", protein: "195", carbs: "310", fats: "75" },
+    schedule: {
+      Monday: {
+        splitName: "Push (Chest, Delts & Triceps)",
+        exercises: [
+          { name: "Incline Dumbbell Press", sets: "4", reps: "8-10", notes: "30-deg bench, 2s eccentric pause" },
+          { name: "Barbell Bench Press", sets: "3", reps: "6-8", notes: "Control descent, touch lower chest" },
+          { name: "Standing Overhead DB Press", sets: "3", reps: "10-12", notes: "Full range of motion" },
+          { name: "Cable Lateral Raises", sets: "4", reps: "15", notes: "Constant tension on side delts" },
+          { name: "Tricep Rope Pushdowns", sets: "3", reps: "12-15", notes: "Flare ropes at full lockout" },
+        ],
+      },
+      Tuesday: {
+        splitName: "Pull (Back, Lats & Biceps)",
+        exercises: [
+          { name: "Conventional Deadlift", sets: "3", reps: "5", notes: "Reset hips between reps" },
+          { name: "Chest-Supported Row", sets: "4", reps: "8-10", notes: "Squeeze shoulder blades" },
+          { name: "Wide-Grip Lat Pulldown", sets: "3", reps: "10-12", notes: "Drive elbows to ribs" },
+          { name: "Face Pulls", sets: "4", reps: "15", notes: "External rotation focus" },
+          { name: "Incline DB Bicep Curls", sets: "3", reps: "10-12", notes: "Supinate at top" },
+        ],
+      },
+      Wednesday: {
+        splitName: "Legs & Calves",
+        exercises: [
+          { name: "Barbell Back Squat", sets: "4", reps: "6-8", notes: "Parallel depth, brace core" },
+          { name: "Romanian Deadlift (RDL)", sets: "3", reps: "8-10", notes: "Push hips back, feel hamstring stretch" },
+          { name: "Bulgarian Split Squats", sets: "3", reps: "10-12", notes: "Knee in line with middle toe" },
+          { name: "Standing Calf Raises", sets: "4", reps: "15", notes: "2s pause at peak" },
+        ],
+      },
+      Thursday: {
+        splitName: "Push Hypertrophy",
+        exercises: [
+          { name: "Incline Smith Machine Press", sets: "4", reps: "10-12", notes: "Controlled tempo" },
+          { name: "Dumbbell Flyes", sets: "3", reps: "12", notes: "Deep stretch at bottom" },
+          { name: "DB Lateral Raises", sets: "4", reps: "15", notes: "Strict form, no swinging" },
+          { name: "Overhead Cable Extension", sets: "3", reps: "12-15", notes: "Long head tricep focus" },
+        ],
+      },
+      Friday: {
+        splitName: "Pull & Lats Hypertrophy",
+        exercises: [
+          { name: "Weighted Pull-Ups", sets: "3", reps: "6-8", notes: "Add weight belt if needed" },
+          { name: "Neutral-Grip Cable Rows", sets: "4", reps: "10-12", notes: "Pull with elbows" },
+          { name: "Straight-Arm Cable Pulldown", sets: "3", reps: "15", notes: "Isolate lats" },
+          { name: "Hammer Curls", sets: "3", reps: "12", notes: "Brachialis focus" },
+        ],
+      },
+      Saturday: {
+        splitName: "Legs & Hamstring Focus",
+        exercises: [
+          { name: "Front Squats", sets: "4", reps: "8-10", notes: "High elbows, upright torso" },
+          { name: "Lying Leg Curls", sets: "4", reps: "12", notes: "Slow 3s eccentric" },
+          { name: "Leg Press", sets: "3", reps: "15", notes: "Feet shoulder-width" },
+          { name: "Seated Calf Raises", sets: "4", reps: "15", notes: "Full stretch" },
+        ],
+      },
+      Sunday: {
+        splitName: "Rest & Recovery",
+        exercises: [],
+      },
+    },
+  },
+  upper_lower: {
+    id: "upper_lower",
+    name: "Upper / Lower Split (4-Day)",
+    description: "Balanced powerbuilding routine alternating upper and lower sessions.",
+    macros: { calories: "2650", protein: "185", carbs: "290", fats: "70" },
+    schedule: {
+      Monday: {
+        splitName: "Upper Power",
+        exercises: [
+          { name: "Barbell Bench Press", sets: "4", reps: "5", notes: "Heavy power work" },
+          { name: "Bent-Over Barbell Row", sets: "4", reps: "6-8", notes: "Torso 45 degrees" },
+          { name: "Standing Overhead Press", sets: "3", reps: "6", notes: "Strict overhead pressing" },
+          { name: "Pull-Ups", sets: "3", reps: "8", notes: "Full lockout" },
+        ],
+      },
+      Tuesday: {
+        splitName: "Lower Power",
+        exercises: [
+          { name: "Barbell Back Squat", sets: "4", reps: "5", notes: "Power work, brace firmly" },
+          { name: "Romanian Deadlift", sets: "3", reps: "6-8", notes: "Heavy loading" },
+          { name: "Leg Press", sets: "3", reps: "10", notes: "Deep knee bend" },
+          { name: "Hanging Leg Raises", sets: "3", reps: "15", notes: "Core compression" },
+        ],
+      },
+      Wednesday: { splitName: "Rest & Active Recovery", exercises: [] },
+      Thursday: {
+        splitName: "Upper Hypertrophy",
+        exercises: [
+          { name: "Incline DB Press", sets: "4", reps: "8-10", notes: "Squeeze upper pecs" },
+          { name: "Lat Pulldown", sets: "4", reps: "10-12", notes: "Pause at bottom" },
+          { name: "Dumbbell Lateral Raises", sets: "4", reps: "12-15", notes: "Side delts" },
+          { name: "Incline DB Curls", sets: "3", reps: "12", notes: "Bicep peak" },
+          { name: "Cable Tricep Pushdown", sets: "3", reps: "12-15", notes: "Tricep pump" },
+        ],
+      },
+      Friday: {
+        splitName: "Lower Hypertrophy",
+        exercises: [
+          { name: "Bulgarian Split Squats", sets: "3", reps: "10-12", notes: "Quads & glutes" },
+          { name: "Barbell Hip Thrusts", sets: "4", reps: "10-12", notes: "Glute lockout" },
+          { name: "Seated Leg Extensions", sets: "3", reps: "15", notes: "Quad pump" },
+          { name: "Lying Hamstring Curls", sets: "3", reps: "15", notes: "Slow negative" },
+        ],
+      },
+      Saturday: { splitName: "Rest Day", exercises: [] },
+      Sunday: { splitName: "Rest Day", exercises: [] },
+    },
+  },
+  full_body: {
+    id: "full_body",
+    name: "Full Body Metabolic (3-Day)",
+    description: "Efficient whole-body training designed for fat loss, conditioning, and joint health.",
+    macros: { calories: "2050", protein: "155", carbs: "190", fats: "55" },
+    schedule: {
+      Monday: {
+        splitName: "Full Body A (Strength Focus)",
+        exercises: [
+          { name: "Goblet Squats", sets: "4", reps: "10-12", notes: "Deep squat, keep chest up" },
+          { name: "DB Flat Bench Press", sets: "3", reps: "10-12", notes: "Controlled pressing" },
+          { name: "Lat Pulldowns", sets: "3", reps: "10-12", notes: "Full stretch" },
+          { name: "Plank Hold", sets: "3", reps: "45s", notes: "Brace glutes and abs" },
+        ],
+      },
+      Tuesday: { splitName: "Rest & Walking", exercises: [] },
+      Wednesday: {
+        splitName: "Full Body B (Hypertrophy)",
+        exercises: [
+          { name: "Romanian Deadlifts", sets: "3", reps: "10-12", notes: "Hamstrings & glutes" },
+          { name: "DB Shoulder Press", sets: "3", reps: "12", notes: "Strict overhead" },
+          { name: "Cable Seated Rows", sets: "3", reps: "12", notes: "Mid-back thickness" },
+          { name: "Walking Lunges", sets: "3", reps: "12", notes: "12 per leg" },
+        ],
+      },
+      Thursday: { splitName: "Rest Day", exercises: [] },
+      Friday: {
+        splitName: "Full Body C (Metabolic Conditioning)",
+        exercises: [
+          { name: "Leg Press", sets: "3", reps: "15", notes: "Continuous tension" },
+          { name: "Push-Ups", sets: "3", reps: "15", notes: "Bodyweight form" },
+          { name: "Face Pulls", sets: "3", reps: "15", notes: "Shoulder health" },
+          { name: "Kettlebell Swings", sets: "4", reps: "20", notes: "Explosive hip drive" },
+        ],
+      },
+      Saturday: { splitName: "Rest Day", exercises: [] },
+      Sunday: { splitName: "Rest Day", exercises: [] },
+    },
+  },
+  beginner: {
+    id: "beginner",
+    name: "Beginner Dumbbells & Core (3-Day)",
+    description: "Foundational strength habit program using minimal dumbbell and bodyweight equipment.",
+    macros: { calories: "2200", protein: "160", carbs: "220", fats: "60" },
+    schedule: {
+      Monday: {
+        splitName: "Dumbbells Upper & Core",
+        exercises: [
+          { name: "DB Floor Press", sets: "3", reps: "10-12", notes: "Safe shoulder position" },
+          { name: "DB Two-Arm Row", sets: "3", reps: "10-12", notes: "Flat back" },
+          { name: "DB Lateral Raises", sets: "3", reps: "12", notes: "Light weights" },
+          { name: "Deadbug", sets: "3", reps: "10", notes: "Controlled core" },
+        ],
+      },
+      Tuesday: { splitName: "Rest Day", exercises: [] },
+      Wednesday: {
+        splitName: "Dumbbells Lower Body",
+        exercises: [
+          { name: "DB Goblet Squats", sets: "3", reps: "10-12", notes: "Hold bell at chest" },
+          { name: "DB Romanian Deadlifts", sets: "3", reps: "10-12", notes: "Hinge at hips" },
+          { name: "Glute Bridges", sets: "3", reps: "15", notes: "2s squeeze at top" },
+          { name: "Standing Calf Raises", sets: "3", reps: "15", notes: "Full range" },
+        ],
+      },
+      Thursday: { splitName: "Rest Day", exercises: [] },
+      Friday: {
+        splitName: "Full Body Circuit",
+        exercises: [
+          { name: "DB Thrusters", sets: "3", reps: "10", notes: "Squat to overhead press" },
+          { name: "DB Bicep Curl to Press", sets: "3", reps: "10", notes: "Smooth transition" },
+          { name: "Bird-Dog", sets: "3", reps: "10", notes: "Per side" },
+          { name: "Mountain Climbers", sets: "3", reps: "30s", notes: "Cardio conditioning" },
+        ],
+      },
+      Saturday: { splitName: "Rest Day", exercises: [] },
+      Sunday: { splitName: "Rest Day", exercises: [] },
+    },
+  },
+};
+
 const DEFAULT_SCHEDULE: { [day in DayOfWeek]: { splitName: string; exercises: ExerciseItem[] } } = {
   Monday: { splitName: "", exercises: [] },
   Tuesday: { splitName: "", exercises: [] },
@@ -58,6 +263,7 @@ export function WorkoutProgramsView({
   clients,
   preSelectedClientId,
 }: WorkoutProgramsViewProps) {
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>("ppl");
   // Target member state
   const [selectedClientId, setSelectedClientId] = useState<string>(
     preSelectedClientId || (clients.length > 0 ? clients[0].id : "")
@@ -325,6 +531,25 @@ export function WorkoutProgramsView({
     }
   };
 
+  // Handler for applying prebuilt workout program templates
+  const handleApplyTemplate = () => {
+    const template = PREBUILT_TEMPLATES[selectedTemplateKey];
+    if (!template) return;
+
+    setScheduleState(template.schedule);
+    setCalories(template.macros.calories);
+    setProtein(template.macros.protein);
+    setCarbs(template.macros.carbs);
+    setFats(template.macros.fats);
+
+    setToast({
+      id: Date.now().toString(),
+      type: "success",
+      title: "Program Template Loaded",
+      message: `"${template.name}" applied across all 7 days with macro targets. You can now tweak and save for this client.`,
+    });
+  };
+
   const selectedClient = clients.find((c) => c.id === selectedClientId);
   const activeDayData = scheduleState[activeDay] || { splitName: "", exercises: [] };
   const isRestDay = activeDayData.splitName.toLowerCase().includes("rest");
@@ -358,6 +583,41 @@ export function WorkoutProgramsView({
               placeholder="Select a client..."
             />
           </div>
+        </div>
+      </div>
+
+      {/* Reusable Program Templates Toolbar */}
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-30">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-[#1754d8]/15 border border-[#1754d8]/30 flex items-center justify-center text-[#1754d8] shrink-0">
+            <Sparkles className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-display font-semibold text-white">Coaching Program Templates</h4>
+            <p className="text-3xs text-zinc-400">Load a battle-tested routine across 7 days or tweak for this member.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <select
+            value={selectedTemplateKey}
+            onChange={(e) => setSelectedTemplateKey(e.target.value)}
+            className="bg-black/50 border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#1754d8] flex-1 sm:w-60"
+          >
+            <option value="ppl">Push / Pull / Legs (PPL - 6-Day)</option>
+            <option value="upper_lower">Upper / Lower Split (4-Day)</option>
+            <option value="full_body">Full Body Metabolic (3-Day)</option>
+            <option value="beginner">Beginner Dumbbells & Core (3-Day)</option>
+          </select>
+
+          <button
+            type="button"
+            onClick={handleApplyTemplate}
+            className="py-2 px-3.5 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white text-xs font-medium transition-colors shrink-0 shadow-md shadow-[#1754d8]/20 flex items-center gap-1.5"
+          >
+            <span>Load Template</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 

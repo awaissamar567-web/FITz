@@ -151,27 +151,39 @@ export function ClientListTable({
                     <td className="py-3 px-3">
                       <span
                         className={`text-3xs font-medium px-2 py-0.5 rounded-md capitalize inline-flex items-center gap-1 ${
-                          c.status === "active"
-                            ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
+                          !c.intake_completed
+                            ? "bg-sky-950/80 text-sky-300 border border-sky-800/60"
                             : isAtRisk
                             ? "bg-amber-950/80 text-amber-300 border border-amber-800/60"
+                            : c.status === "active"
+                            ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
                             : "bg-zinc-800 text-zinc-400 border border-zinc-700"
                         }`}
                       >
-                        {isAtRisk ? "⚠️ At Risk" : c.status}
+                        {!c.intake_completed ? "Intake Pending" : isAtRisk ? "⚠️ At Risk" : c.status}
                       </span>
                     </td>
 
                     {/* Last Check-In */}
                     <td className="py-3 px-3">
                       <div className="space-y-0.5 font-normal">
-                        <p className="text-xs text-zinc-300 font-mono">
-                          {c.lastCheckinDate || c.latestCheckinDate || "Never"}
-                        </p>
-                        {c.daysSinceLastCheckin !== undefined && (
-                          <p className="text-3xs text-zinc-500 font-mono">
-                            {c.daysSinceLastCheckin === 0 ? "Today" : `${c.daysSinceLastCheckin}d ago`}
-                          </p>
+                        {!c.intake_completed ? (
+                          <span className="text-3xs text-zinc-500 font-mono">Awaiting intake</span>
+                        ) : c.daysSinceLastCheckin == null ? (
+                          <span className="text-3xs text-zinc-500 font-mono">No check-in yet</span>
+                        ) : (
+                          <>
+                            <p className="text-xs text-zinc-300 font-mono">
+                              {c.lastCheckinDate || c.latestCheckinDate || "Recent"}
+                            </p>
+                            <p className={`text-3xs font-mono ${c.daysSinceLastCheckin > 7 ? "text-amber-400 font-medium" : "text-zinc-500"}`}>
+                              {c.daysSinceLastCheckin === 0
+                                ? "Today"
+                                : c.daysSinceLastCheckin > 7
+                                ? `Overdue (${c.daysSinceLastCheckin}d ago)`
+                                : `${c.daysSinceLastCheckin}d ago`}
+                            </p>
+                          </>
                         )}
                       </div>
                     </td>

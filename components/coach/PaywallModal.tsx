@@ -8,7 +8,8 @@ import {
   Loader2,
   ArrowRight,
   ArrowLeft,
-  Check
+  Check,
+  Sparkles
 } from "lucide-react";
 
 interface PaywallModalProps {
@@ -156,11 +157,22 @@ export function PaywallModal({
             {/* Header */}
             <div className="space-y-2">
               <h2 className="text-xl font-bold text-white tracking-tight pt-0.5">
-                Unlock Unlimited Clients with FITz Pro
+                Supercharge Your Coaching Business with FITz Pro
               </h2>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                You’ve reached the 5-client capacity on the Free Tier. Upgrade to Pro to scale your coaching business without roster limits.
+                Deliver high-touch accountability to more members in half the time. Built for Whop coaches who want higher retention and effortless scaling.
               </p>
+            </div>
+
+            {/* ROI Value Callout */}
+            <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-emerald-300">
+              <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-semibold text-emerald-200 block text-3xs uppercase tracking-wider">High-ROI Coaching Investment</span>
+                <p className="text-3xs text-emerald-300/90 leading-relaxed">
+                  Retaining just <strong>one coaching client</strong> for an extra month pays for FITz Pro 4x over.
+                </p>
+              </div>
             </div>
 
             {/* Pricing Card Hero Box */}
@@ -184,23 +196,19 @@ export function PaywallModal({
               <ul className="space-y-2.5 text-xs text-zinc-200 font-normal">
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Unlimited Active Clients</strong> (No 5-client cap)</span>
+                  <span><strong className="font-medium text-white">Save 6+ Hours/Week</strong> with reusable 7-day program templates (PPL, Upper/Lower)</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Live Activity Feed</strong> with real-time check-in sync</span>
+                  <span><strong className="font-medium text-white">Automated Churn Queue</strong> with 1-click Whop DM intervention before members cancel</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Automated Churn Detection</strong> & at-risk alerts</span>
+                  <span><strong className="font-medium text-white">Full Accountability Loop</strong> with progress photos, coach feedback notes & macro limits</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Custom Workout Split Builder</strong> & Macro Targets</span>
-                </li>
-                <li className="flex items-center gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Direct Whop Native Chat Integration</strong></span>
+                  <span><strong className="font-medium text-white">Unlimited Active Clients</strong> — scale from 5 to 500+ members with zero caps</span>
                 </li>
               </ul>
             </div>

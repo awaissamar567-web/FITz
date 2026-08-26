@@ -42,11 +42,12 @@ interface CoachDashboardProps {
   companyId: string;
   company: Company | null;
   initialClients: EnrichedClient[];
+  initialFeed?: any[];
 }
 
 type CoachNavTab = "dashboard" | "clients" | "programs" | "feed" | "retention" | "settings";
 
-export function CoachDashboard({ companyId, company: initialCompany, initialClients }: CoachDashboardProps) {
+export function CoachDashboard({ companyId, company: initialCompany, initialClients, initialFeed = [] }: CoachDashboardProps) {
   const [clients] = useState<EnrichedClient[]>(initialClients);
   const [company, setCompany] = useState<Company | null>(initialCompany);
   const [activeTab, setActiveTab] = useState<CoachNavTab>("dashboard");
@@ -59,6 +60,11 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
   );
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+
+  // Retention Intervention Queue State
+  const [snoozedClients, setSnoozedClients] = useState<Record<string, number>>({});
+  const [contactedClients, setContactedClients] = useState<Record<string, string>>({});
+  const [retentionFilter, setRetentionFilter] = useState<"all" | "overdue" | "intake" | "plan">("all");
 
   // Coach Settings Form State
   const [coachName, setCoachName] = useState(company?.coach_name || "Coach Alex Rivera");
@@ -76,6 +82,25 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
         c.daysSinceLastCheckin > (company?.at_risk_threshold_days || 7))
   );
   const atRiskCount = atRiskClients.length;
+
+  // 4-Tier Operational Triage Queue
+  const overdueClients = clients.filter(
+    (c) =>
+      c.status !== "cancelled" &&
+      c.intake_completed &&
+      c.daysSinceLastCheckin != null &&
+      c.daysSinceLastCheckin >= (company?.at_risk_threshold_days || 7)
+  );
+
+  const intakePendingClients = clients.filter(
+    (c) => c.status !== "cancelled" && !c.intake_completed
+  );
+
+  const missingPlanClients = clients.filter(
+    (c) => c.status !== "cancelled" && c.intake_completed && !c.hasActivePlan
+  );
+
+  const totalInterventions = overdueClients.length + intakePendingClients.length + missingPlanClients.length;
 
   const isFreeTierCapped = company?.plan !== "pro" && activeCount >= 5;
 
@@ -373,6 +398,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
               <div className="lg:col-span-1">
                 <RealtimeActivityFeed
                   companyId={companyId}
+                  initialFeed={initialFeed}
                   onSelectClient={(clientId) => setActiveProfileClientId(clientId)}
                 />
               </div>
@@ -401,77 +427,240 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
             </div>
             <RealtimeActivityFeed
               companyId={companyId}
+              initialFeed={initialFeed}
               onSelectClient={(clientId) => setActiveProfileClientId(clientId)}
             />
           </div>
         )}
 
         {/* -----------------------------------------------------------------------
-            TAB 4: RETENTION & CHURN MANAGEMENT
+            TAB 4: OPERATIONAL RETENTION & CHURN INTERVENTION QUEUE
             ----------------------------------------------------------------------- */}
         {activeTab === "retention" && (
           <div className="space-y-6">
-            <div className="border-b border-white/[0.06] pb-3">
-              <div className="flex items-center gap-2.5">
-                <Flame className="w-6 h-6 text-amber-500" />
-                <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
-                  Retention & Churn Center
-                </h2>
+            {/* Header & KPI Summary Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <Flame className="w-6 h-6 text-amber-500" />
+                  <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
+                    Retention & Churn Triage
+                  </h2>
+                </div>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Active member interventions prioritized by churn risk, intake delays, and plan gaps.
+                </p>
+              </div>
+
+              {/* Quick Stat Pill */}
+              <div className="flex items-center gap-3 bg-[#0c0c0e]/80 border border-white/[0.08] p-2 rounded-2xl">
+                <div className="px-3 py-1 rounded-xl bg-amber-950/60 border border-amber-800/60 text-center">
+                  <span className="text-3xs text-amber-400 block font-medium uppercase">Urgent Items</span>
+                  <span className="text-sm font-bold text-white font-mono">{totalInterventions}</span>
+                </div>
+                <div className="px-3 py-1 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-center">
+                  <span className="text-3xs text-emerald-400 block font-medium uppercase">MRR Protected</span>
+                  <span className="text-sm font-bold text-white font-mono">${overdueClients.length * 50}/mo</span>
+                </div>
               </div>
             </div>
 
-            {atRiskClients.length === 0 ? (
+            {/* Segmented Triage Filter Controls */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              {[
+                { id: "all", label: `All Action Items (${totalInterventions})` },
+                { id: "overdue", label: `⚠️ Missed Check-Ins (${overdueClients.length})` },
+                { id: "intake", label: `📋 Intake Pending (${intakePendingClients.length})` },
+                { id: "plan", label: `⚡ Missing Plan (${missingPlanClients.length})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setRetentionFilter(tab.id as any)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 ${
+                    retentionFilter === tab.id
+                      ? "bg-[#1754d8] text-white shadow-md shadow-[#1754d8]/25"
+                      : "bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.06]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Triage Items List */}
+            {totalInterventions === 0 ? (
               <div className="p-8 sm:p-12 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] text-center space-y-2">
                 <ShieldCheck className="w-10 h-10 mx-auto text-emerald-400" />
-                <h3 className="text-base font-display font-semibold text-white">No At-Risk Clients</h3>
+                <h3 className="text-base font-display font-semibold text-white">Zero At-Risk Members</h3>
                 <p className="text-xs font-normal text-zinc-400 max-w-sm mx-auto">
-                  Every active member has checked in within your configured {company?.at_risk_threshold_days || 7}-day threshold.
+                  Every active member has an assigned plan, completed intake, and is logging check-ins on schedule!
                 </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {atRiskClients.map((c) => (
-                  <div
-                    key={c.id}
-                    className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-amber-800/40 shadow-lg shadow-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-amber-600/60"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-display font-semibold text-white">
-                          {(c as any).display_name || c.whop_user_id}
-                        </span>
-                        <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.06]">
-                          @{c.whop_user_id}
-                        </span>
-                        <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 border border-amber-800/60">
-                          {c.daysSinceLastCheckin !== undefined ? `${c.daysSinceLastCheckin}d Inactive` : "At Risk"}
-                        </span>
-                      </div>
-                      <p className="text-2xs font-normal text-zinc-400">
-                        Primary Goal: <span className="text-zinc-300 font-medium">{c.goal || "General Fitness"}</span> •
-                        Last Check-In: <span className="text-zinc-300 font-mono">{c.lastCheckinDate || "Never"}</span>
-                      </p>
-                    </div>
+                {/* 1. Missed Check-ins (Overdue > 7d) */}
+                {(retentionFilter === "all" || retentionFilter === "overdue") &&
+                  overdueClients.map((c) => {
+                    const isSnoozed = snoozedClients[c.id] && snoozedClients[c.id] > Date.now();
+                    const isContacted = contactedClients[c.id];
+                    return (
+                      <div
+                        key={`overdue-${c.id}`}
+                        className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/85 backdrop-blur-xl border border-amber-800/50 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-amber-500/60"
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <span className="text-sm font-display font-semibold text-white">
+                              {(c as any).display_name || c.whop_user_id}
+                            </span>
+                            <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.06]">
+                              @{c.whop_user_id}
+                            </span>
+                            <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 border border-amber-800/60">
+                              ⚠️ {c.daysSinceLastCheckin}d Since Last Check-In
+                            </span>
+                            {isContacted && (
+                              <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
+                                ✓ Reached Out
+                              </span>
+                            )}
+                            {isSnoozed && (
+                              <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                ⏳ Snoozed
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-2xs text-zinc-400">
+                            <strong>Reason:</strong> Missed weekly check-in schedule. At immediate risk of subscription churn.
+                          </p>
+                          <p className="text-3xs text-zinc-500 italic">
+                            Suggested DM: "Hey {(c as any).display_name || c.whop_user_id}, noticed you missed your check-in. Everything okay with training? Let me know how I can help adjust your split!"
+                          </p>
+                        </div>
 
-                    <div className="flex items-center gap-2.5 shrink-0">
-                      <button
-                        onClick={() => setActiveProfileClientId(c.id)}
-                        className="py-2 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.98] text-white text-xs font-medium transition-colors border border-white/[0.08]"
-                      >
-                        View Profile
-                      </button>
-                      <a
-                        href={`https://whop.com/messages/?user=${c.whop_user_id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-[0.98] text-white text-xs font-medium transition-colors flex items-center gap-1.5"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Message on Whop</span>
-                      </a>
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setContactedClients((prev) => ({ ...prev, [c.id]: "today" }));
+                              setToast({
+                                id: Date.now().toString(),
+                                type: "success",
+                                title: "Outreach Logged",
+                                message: `Marked outreach complete for ${(c as any).display_name || c.whop_user_id}.`,
+                              });
+                            }}
+                            className="py-2 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] active:scale-[0.98] text-white text-xs font-medium transition-colors border border-white/[0.08]"
+                          >
+                            Mark Contacted
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSnoozedClients((prev) => ({ ...prev, [c.id]: Date.now() + 7 * 86400000 }));
+                              setToast({
+                                id: Date.now().toString(),
+                                type: "info",
+                                title: "Member Snoozed",
+                                message: `Snoozed alerts for ${(c as any).display_name || c.whop_user_id} for 7 days.`,
+                              });
+                            }}
+                            className="py-2 px-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-zinc-400 hover:text-white text-xs font-medium transition-colors border border-white/[0.06]"
+                          >
+                            Snooze 7d
+                          </button>
+                          <a
+                            href={`https://whop.com/messages/?user=${c.whop_user_id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-[0.98] text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-md shadow-amber-600/20"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>1-Click Whop DM</span>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {/* 2. Intake Pending (>24h since join) */}
+                {(retentionFilter === "all" || retentionFilter === "intake") &&
+                  intakePendingClients.map((c) => (
+                    <div
+                      key={`intake-${c.id}`}
+                      className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/85 backdrop-blur-xl border border-sky-800/50 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-sky-500/60"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="text-sm font-display font-semibold text-white">
+                            {(c as any).display_name || c.whop_user_id}
+                          </span>
+                          <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.06]">
+                            @{c.whop_user_id}
+                          </span>
+                          <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-sky-950/80 text-sky-300 border border-sky-800/60">
+                            📋 Intake Incomplete
+                          </span>
+                        </div>
+                        <p className="text-2xs text-zinc-400">
+                          <strong>Reason:</strong> Joined coaching workspace but has not submitted intake assessment questionnaire.
+                        </p>
+                        <p className="text-3xs text-zinc-500 italic">
+                          Suggested DM: "Hey {(c as any).display_name || c.whop_user_id}! Welcome to the coaching program. Please fill out your quick 2-step intake questionnaire in your portal so I can design your training block!"
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <a
+                          href={`https://whop.com/messages/?user=${c.whop_user_id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-[0.98] text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-md shadow-sky-600/20"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>Prompt via Whop DM</span>
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+
+                {/* 3. Missing Plan (Intake complete, but no workout routine assigned) */}
+                {(retentionFilter === "all" || retentionFilter === "plan") &&
+                  missingPlanClients.map((c) => (
+                    <div
+                      key={`plan-${c.id}`}
+                      className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/85 backdrop-blur-xl border border-purple-800/50 shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-purple-500/60"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="text-sm font-display font-semibold text-white">
+                            {(c as any).display_name || c.whop_user_id}
+                          </span>
+                          <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.06]">
+                            @{c.whop_user_id}
+                          </span>
+                          <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/60">
+                            ⚡ Awaiting Workout Split
+                          </span>
+                        </div>
+                        <p className="text-2xs text-zinc-400">
+                          <strong>Reason:</strong> Intake completed with goal:{" "}
+                          <span className="text-zinc-200 font-medium">{c.goal || "General Fitness"}</span>. Member is waiting for their first workout routine.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => {
+                            setActiveProgramClientId(c.id);
+                            setActiveTab("programs");
+                          }}
+                          className="py-2 px-3.5 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-md shadow-[#1754d8]/25"
+                        >
+                          <Dumbbell className="w-3.5 h-3.5" />
+                          <span>Assign Workout Split</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
               </div>
             )}
           </div>

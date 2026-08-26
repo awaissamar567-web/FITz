@@ -1,7 +1,12 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Client, ClientStatus } from "@/types/database";
 
-const memoryClients = new Map<string, Client>();
+const globalWithClients = globalThis as typeof globalThis & {
+  __fitz_memory_clients?: Map<string, Client>;
+};
+export const memoryClients: Map<string, Client> =
+  globalWithClients.__fitz_memory_clients ||
+  (globalWithClients.__fitz_memory_clients = new Map<string, Client>());
 
 function cMatch(a: string, b: string): boolean {
   if (!a || !b) return false;
@@ -89,6 +94,18 @@ export async function getClientByWhopUserId(
     if (!error && data) {
       return data as Client;
     }
+
+    // Secondary fallback: check by whop_experience_id
+    const { data: expData, error: expErr } = await supabaseAdmin
+      .from("clients")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("whop_experience_id", whopUserId)
+      .maybeSingle();
+
+    if (!expErr && expData) {
+      return expData as Client;
+    }
   } catch (err) {
     console.warn("[Clients] getClientByWhopUserId remote error:", err);
   }
@@ -101,8 +118,10 @@ export async function getClientByWhopUserId(
       compMatches &&
       (client.whop_user_id === whopUserId ||
         client.id === whopUserId ||
+        client.whop_experience_id === whopUserId ||
         clMatch(client.whop_user_id, whopUserId) ||
-        clMatch(client.id, whopUserId))
+        clMatch(client.id, whopUserId) ||
+        clMatch(client.whop_experience_id, whopUserId))
     ) {
       return client;
     }

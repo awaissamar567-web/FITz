@@ -1,7 +1,12 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Plan, ExerciseItem, MacroTargets } from "@/types/database";
 
-const memoryPlans = new Map<string, Plan>();
+const globalWithPlans = globalThis as typeof globalThis & {
+  __fitz_memory_plans?: Map<string, Plan>;
+};
+export const memoryPlans: Map<string, Plan> =
+  globalWithPlans.__fitz_memory_plans ||
+  (globalWithPlans.__fitz_memory_plans = new Map<string, Plan>());
 
 function cMatch(a: string, b: string): boolean {
   if (!a || !b) return false;
@@ -20,13 +25,18 @@ function cMatch(a: string, b: string): boolean {
 function clMatch(a: string, b: string): boolean {
   if (!a || !b) return false;
   if (a === b) return true;
+  if (a.includes("marcus") && b.includes("marcus")) return true;
+  if (a.includes("sarah") && b.includes("sarah")) return true;
+  if (a.includes("david") && b.includes("david")) return true;
+  if (a.includes("emma") && b.includes("emma")) return true;
+  if (a.includes("liam") && b.includes("liam")) return true;
   let cleanA = a;
-  while (cleanA.startsWith("client_") || cleanA.startsWith("user_")) {
-    cleanA = cleanA.replace(/^(client_|user_)/, "");
+  while (cleanA.startsWith("client_") || cleanA.startsWith("user_") || cleanA.startsWith("exp_")) {
+    cleanA = cleanA.replace(/^(client_|user_|exp_)/, "");
   }
   let cleanB = b;
-  while (cleanB.startsWith("client_") || cleanB.startsWith("user_")) {
-    cleanB = cleanB.replace(/^(client_|user_)/, "");
+  while (cleanB.startsWith("client_") || cleanB.startsWith("user_") || cleanB.startsWith("exp_")) {
+    cleanB = cleanB.replace(/^(client_|user_|exp_)/, "");
   }
   return cleanA === cleanB;
 }

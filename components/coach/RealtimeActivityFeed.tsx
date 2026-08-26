@@ -32,7 +32,8 @@ export function RealtimeActivityFeed({
   useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const res = await fetch(`/api/coach/feed?companyId=${companyId}&limit=15`);
+        const isDemo = companyId.startsWith("biz_coach_alex") || companyId.startsWith("biz_");
+        const res = await fetch(`/api/coach/feed?companyId=${companyId}&limit=15${isDemo ? "&demo=true" : ""}`);
         const data = await res.json();
         if (data.feed) {
           setFeed(data.feed);
@@ -43,7 +44,7 @@ export function RealtimeActivityFeed({
     };
 
     fetchFeed();
-    const interval = setInterval(fetchFeed, 3000); // 3-second live poll
+    const interval = setInterval(fetchFeed, 4000); // 4-second live poll
     return () => clearInterval(interval);
   }, [companyId]);
 
@@ -74,10 +75,10 @@ export function RealtimeActivityFeed({
             >
               <div className="flex items-center justify-between">
                 <span className="font-medium text-xs text-white truncate max-w-[140px]">
-                  @{item.client_whop_user_id}
+                  {(item as any).client_display_name || item.client_whop_user_id}
                 </span>
                 <span className="text-3xs font-normal text-slate-500 font-mono">
-                  {new Date(item.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {item.date || new Date(item.created_at).toLocaleDateString([], { month: "short", day: "numeric" })}
                 </span>
               </div>
 

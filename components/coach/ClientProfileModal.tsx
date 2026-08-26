@@ -379,6 +379,50 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
                       />
                     </div>
                   )}
+
+                  {/* Coach Feedback Section */}
+                  {chk.coach_feedback ? (
+                    <div className="p-3 rounded-xl bg-[#1754d8]/10 border border-[#1754d8]/30 space-y-1">
+                      <div className="flex items-center justify-between text-3xs">
+                        <span className="font-semibold text-[#1754d8] flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> Coach Alex's Feedback
+                        </span>
+                        <span className="text-zinc-500 font-mono">Reviewed</span>
+                      </div>
+                      <p className="text-xs text-zinc-200 font-normal">
+                        "{chk.coach_feedback}"
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/[0.08] space-y-2">
+                      <div className="flex items-center justify-between text-3xs">
+                        <span className="text-zinc-400 font-medium flex items-center gap-1">
+                          <MessageSquare className="w-3 h-3 text-amber-400" /> Send Coach Feedback
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Reply with guidance (e.g. 'Great PR! Bump weight by 2kg next week')"
+                          id={`coach-feedback-${chk.id}`}
+                          className="flex-1 bg-black/40 border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#1754d8]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const el = document.getElementById(`coach-feedback-${chk.id}`) as HTMLInputElement;
+                            if (el && el.value.trim()) {
+                              chk.coach_feedback = el.value.trim();
+                              setData({ ...data });
+                            }
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#1754d8] hover:bg-[#154ac0] text-white text-xs font-medium shrink-0 transition-colors"
+                        >
+                          Send Note
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

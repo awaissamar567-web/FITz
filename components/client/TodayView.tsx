@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Dumbbell, Utensils, ArrowRight, Flame, Target, Calendar, FileText, Download, CheckCircle2 } from "lucide-react";
+import { Dumbbell, Utensils, ArrowRight, Flame, Target, Calendar, FileText, Download, CheckCircle2, Sparkles } from "lucide-react";
 import { Client, Plan, DayOfWeek, DayRoutine } from "@/types/database";
 import { normalizePlan, FormattedExercise, formatExercise } from "@/lib/utils/formatters";
 
@@ -37,6 +37,58 @@ export function TodayView({ client, plan: rawPlan, onNavigateToCheckin }: TodayV
 
   return (
     <div className="space-y-4 font-sans">
+      {/* Coach's Directive Banner */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1754d8]/15 via-black/40 to-transparent border border-[#1754d8]/30 shadow-lg space-y-1.5">
+        <div className="flex items-center justify-between text-3xs">
+          <span className="font-semibold text-[#1754d8] flex items-center gap-1.5 uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" /> Coach Alex's Directive
+          </span>
+          <span className="text-zinc-400 font-mono">This Week's Focus</span>
+        </div>
+        <p className="text-xs text-zinc-200 font-normal leading-relaxed">
+          {plan?.notes || "Welcome to your training block! Focus on strict form on heavy compound days and hit your protein target daily."}
+        </p>
+      </div>
+
+      {/* Onboarding Status Timeline (if plan is pending) */}
+      {!plan && (
+        <div className="p-5 rounded-2xl bg-[#0c0c0e]/85 backdrop-blur-xl border border-white/[0.08] shadow-lg space-y-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-[#1754d8]" />
+            <h3 className="text-sm font-display font-semibold text-white">Coaching Setup Status</h3>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-xs">
+                ✓
+              </div>
+              <div>
+                <p className="text-xs font-medium text-white">Intake Questionnaire Complete</p>
+                <p className="text-3xs text-zinc-500">Your physical stats, goals, and equipment preferences were submitted.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-6 h-6 rounded-full bg-[#1754d8]/20 text-[#1754d8] border border-[#1754d8]/40 flex items-center justify-center text-xs animate-pulse">
+                ⏳
+              </div>
+              <div>
+                <p className="text-xs font-medium text-white">Coach Alex Reviewing Assessment</p>
+                <p className="text-3xs text-zinc-500">Your custom workout split and nutrition targets are being finalized.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 opacity-50">
+              <div className="w-6 h-6 rounded-full bg-white/[0.05] text-zinc-400 border border-white/[0.1] flex items-center justify-center text-xs">
+                3
+              </div>
+              <div>
+                <p className="text-xs font-medium text-white">First Training Split Published</p>
+                <p className="text-3xs text-zinc-500">Your daily exercises and macro limits will appear right here.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Primary Daily CTA Card - Frosted Glass UI */}
       <div className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/85 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-white/[0.12]">
         <div className="space-y-1">
