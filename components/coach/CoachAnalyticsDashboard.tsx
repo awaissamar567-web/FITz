@@ -35,6 +35,9 @@ export function CoachAnalyticsDashboard({
   const intakeCount = intakeDoneClients.length;
   const planCount = planAssignedClients.length;
   const atRiskCount = atRiskClients.length;
+  const pendingIntakeClients = clients.filter((client) => !client.intake_completed && client.status !== "cancelled");
+  const firstPendingIntake = pendingIntakeClients[0];
+  const firstAtRisk = atRiskClients[0];
 
   const intakePercentage = clients.length > 0 ? Math.round((intakeCount / clients.length) * 100) : 0;
   const planPercentage = clients.length > 0 ? Math.round((planCount / clients.length) * 100) : 0;
@@ -196,8 +199,8 @@ export function CoachAnalyticsDashboard({
               <div className="flex items-start gap-2.5 min-w-0">
                 <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div className="space-y-0.5 min-w-0">
-                  <span className="text-3xs font-medium text-amber-200 block truncate">1 Member Awaiting Intake</span>
-                  <span className="text-3xs text-amber-400/90 font-mono block">Emma Watson (1d ago)</span>
+                  <span className="text-3xs font-medium text-amber-200 block truncate">{pendingIntakeClients.length} Member{pendingIntakeClients.length === 1 ? "" : "s"} Awaiting Intake</span>
+                  <span className="text-3xs text-amber-400/90 font-mono block">{firstPendingIntake?.display_name || firstPendingIntake?.whop_user_id || "No pending intakes"}</span>
                 </div>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
@@ -211,8 +214,8 @@ export function CoachAnalyticsDashboard({
               <div className="flex items-start gap-2.5 min-w-0">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <div className="space-y-0.5 min-w-0">
-                  <span className="text-3xs font-medium text-red-200 block truncate">1 At-Risk Churn Alert</span>
-                  <span className="text-3xs text-red-400/90 font-mono block">Sarah Jenkins (12d overdue)</span>
+                  <span className="text-3xs font-medium text-red-200 block truncate">{atRiskCount} At-Risk Churn Alert{atRiskCount === 1 ? "" : "s"}</span>
+                  <span className="text-3xs text-red-400/90 font-mono block">{firstAtRisk ? `${firstAtRisk.display_name || firstAtRisk.whop_user_id} (${firstAtRisk.daysSinceLastCheckin ?? "—"}d overdue)` : "No at-risk members"}</span>
                 </div>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-red-400 group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />

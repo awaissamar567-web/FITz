@@ -7,6 +7,7 @@ import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
 interface IntakeFormProps {
   clientId: string;
   companyId: string;
+  experienceId: string;
   onComplete: () => void;
 }
 
@@ -40,7 +41,7 @@ const DAYS_OPTIONS: SelectOption[] = [
   { value: "6", label: "6 Days per Week" },
 ];
 
-export function IntakeForm({ clientId, companyId, onComplete }: IntakeFormProps) {
+export function IntakeForm({ clientId, companyId, experienceId, onComplete }: IntakeFormProps) {
   // Step state: 1 (Baseline & Goals) | 2 (Training Setup) | 3 (Complete Celebration)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
@@ -77,6 +78,7 @@ export function IntakeForm({ clientId, companyId, onComplete }: IntakeFormProps)
     try {
       const payload = {
         companyId,
+        experienceId,
         clientId,
         display_name: fullName.trim(),
         goal,
@@ -127,7 +129,7 @@ export function IntakeForm({ clientId, companyId, onComplete }: IntakeFormProps)
             Profile Ready, {fullName}!
           </h2>
           <p className="text-xs text-zinc-400 max-w-sm mx-auto">
-            Your onboarding assessment was submitted to Coach Alex. Loading your training portal...
+            Your onboarding assessment was submitted to your coach. Loading your training portal...
           </p>
         </div>
         <div className="flex items-center justify-center gap-2 text-3xs text-emerald-400 font-mono">
@@ -189,7 +191,7 @@ export function IntakeForm({ clientId, companyId, onComplete }: IntakeFormProps)
               <input
                 type="text"
                 required
-                placeholder="e.g. Marcus Chen"
+                placeholder="Your full name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-white/[0.08] bg-[#0c0c0e]/90 text-white text-xs focus:outline-none focus:border-[#1754d8] focus:ring-1 focus:ring-[#1754d8]"
@@ -351,7 +353,7 @@ export function IntakeForm({ clientId, companyId, onComplete }: IntakeFormProps)
           <div className="p-3 rounded-xl bg-[#1754d8]/10 border border-[#1754d8]/30 flex items-center gap-2.5 text-3xs text-zinc-300">
             <Sparkles className="w-4 h-4 text-[#1754d8] shrink-0" />
             <span>
-              Your responses will generate your customized training split, exercise selections, and daily macro targets from Coach Alex.
+              Your responses give your coach the context needed to build your training split, exercise selections, and daily macro targets.
             </span>
           </div>
 

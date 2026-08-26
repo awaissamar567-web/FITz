@@ -1,9 +1,8 @@
 import { requireCoachAccess } from "@/lib/whop-auth";
 import { getOrCreateCompany } from "@/lib/services/companies";
-import { listClients, getClient } from "@/lib/services/clients";
+import { listClients } from "@/lib/services/clients";
 import { listCheckins } from "@/lib/services/checkins";
-import { getCurrentPlan } from "@/lib/services/plans";
-import { seedDemoData } from "@/lib/services/seed";
+import { listPlans } from "@/lib/services/plans";
 import { AccessDenied } from "@/components/AccessDenied";
 import { CoachDashboard } from "@/components/coach/CoachDashboard";
 import { EnrichedClient } from "@/components/coach/ClientListTable";
@@ -12,24 +11,13 @@ interface DashboardPageProps {
   params: Promise<{
     companyId: string;
   }>;
-  searchParams?: Promise<{
-    demo?: string;
-    pro?: string;
-  }>;
 }
 
-export default async function CoachDashboardPage({ params, searchParams }: DashboardPageProps) {
+export default async function CoachDashboardPage({ params }: DashboardPageProps) {
   const { companyId } = await params;
-  const sp = searchParams ? await searchParams : {};
-  const isDemo = sp.demo === "true" || companyId.startsWith("biz_coach_alex");
-
   let authContext;
   try {
-    if (isDemo) {
-      authContext = { userId: `demo_coach_${companyId}`, companyId, accessLevel: "admin" as const, hasAccess: true };
-    } else {
-      authContext = await requireCoachAccess(companyId);
-    }
+    authContext = await requireCoachAccess(companyId);
   } catch (error) {
     return (
       <AccessDenied
@@ -50,18 +38,21 @@ export default async function CoachDashboardPage({ params, searchParams }: Dashb
     );
   }
 
-  // Auto-seed canonical demo dataset if empty in demo mode
   let rawClients = await listClients(company.id);
-  if (rawClients.length === 0 && (isDemo || companyId.startsWith("biz_coach_alex"))) {
-    await seedDemoData(companyId);
-    rawClients = await listClients(company.id);
-  }
 
-  // Load clients and enrich with last check-in and active plan status
-  const enrichedClients: EnrichedClient[] = await Promise.all(
-    rawClients.map(async (client) => {
-      const checkins = await listCheckins(company.id, client.id, 1);
-      const lastCheckin = checkins[0] || null;
+  const [tenantCheckins, tenantPlans] = await Promise.all([
+    listCheckins(company.id, undefined, 1000),
+    listPlans(company.id),
+  ]);
+  const clientById = new Map(rawClients.map((client) => [client.id, client]));
+  const latestCheckinByClient = new Map<string, (typeof tenantCheckins)[number]>();
+  for (const checkin of tenantCheckins) {
+    if (!latestCheckinByClient.has(checkin.client_id)) latestCheckinByClient.set(checkin.client_id, checkin);
+  }
+  const plannedClientIds = new Set(tenantPlans.map((plan) => plan.client_id));
+
+  const enrichedClients: EnrichedClient[] = rawClients.map((client) => {
+      const lastCheckin = latestCheckinByClient.get(client.id) || null;
       let daysSinceLastCheckin: number | null = null;
 
       if (lastCheckin) {
@@ -70,45 +61,30 @@ export default async function CoachDashboardPage({ params, searchParams }: Dashb
         daysSinceLastCheckin = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
       }
 
-      // Check active assigned plan
-      const plan = await getCurrentPlan(company.id, client.id);
-      const hasActivePlan = Boolean(
-        plan && (plan.exercises?.length > 0 || (plan as any).split || (plan as any).name)
-      );
-
       return {
         ...client,
         lastCheckin,
         lastCheckinDate: lastCheckin?.date,
         daysSinceLastCheckin,
-        hasActivePlan,
+        hasActivePlan: plannedClientIds.has(client.id),
       };
-    })
-  );
+    });
 
   // Pre-fetch initial activity feed for instant zero-latency render
-  const rawFeed = await listCheckins(company.id, undefined, 15);
-  const initialFeed = await Promise.all(
-    rawFeed.map(async (item: any) => {
-      const client = await getClient(company.id, item.client_id);
+  const initialFeed = tenantCheckins.slice(0, 15).map((item: any) => {
+      const client = clientById.get(item.client_id);
       return {
         ...item,
         client_whop_user_id: client?.whop_user_id || "Unknown Client",
         client_display_name: (client as any)?.display_name || client?.whop_user_id || "Member",
         client_goal: client?.goal || null,
       };
-    })
-  );
-
-  const isPro = sp.pro === "true";
-  const effectiveCompany = isPro
-    ? { ...company, plan: "pro" as const }
-    : company;
+    });
 
   return (
     <CoachDashboard
       companyId={companyId}
-      company={effectiveCompany}
+      company={company}
       initialClients={enrichedClients}
       initialFeed={initialFeed}
     />

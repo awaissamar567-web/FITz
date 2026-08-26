@@ -1,185 +1,74 @@
-"use client";
-
-import React, { useState } from "react";
 import Link from "next/link";
-import {
-  Users,
-  Dumbbell,
-  ShieldCheck,
-  Sparkles,
-  ArrowRight,
-  ExternalLink,
-  Flame,
-  Activity,
-  CheckCircle2,
-  RefreshCw,
-  Scale,
-  Calendar,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Dumbbell, ShieldCheck, Users } from "lucide-react";
+
+const capabilities = [
+  "Whop-authenticated coach and member access",
+  "Tenant-isolated plans, check-ins, and progress photos",
+  "Workout programming, macro targets, and retention workflows",
+];
 
 export default function HomePage() {
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [seedSuccess, setSeedSuccess] = useState(false);
-
-  const handleSeedDemo = async () => {
-    setIsSeeding(true);
-    setSeedSuccess(false);
-    try {
-      const res = await fetch("/api/test/seed-demo", { method: "POST" });
-      if (res.ok) {
-        setSeedSuccess(true);
-        setTimeout(() => setSeedSuccess(false), 3000);
-      }
-    } catch (e) {
-      console.error("Failed to seed demo data", e);
-    } finally {
-      setIsSeeding(false);
-    }
-  };
-
   return (
-    <main className="min-h-screen bg-[#111111] text-zinc-100 flex flex-col items-center justify-center p-4 sm:p-6 lg:p-8 font-sans selection:bg-[#1754d8]/30 selection:text-white">
-      <div className="w-full max-w-5xl space-y-6 py-6">
-        {/* Header Hero */}
-        <div className="text-center space-y-3">
-          <img src="/brand/fitz_logo.png" alt="FITz" className="h-12 w-auto object-contain mx-auto" />
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-semibold tracking-tight text-white">
-            Coach & Member Workspace
-          </h1>
-          <p className="text-xs sm:text-sm text-zinc-400 max-w-xl mx-auto font-normal leading-relaxed">
-            A production-ready fitness coaching platform. Select any sandbox persona below to test.
-          </p>
+    <main className="flex min-h-screen items-center justify-center bg-[#111111] px-4 py-10 text-zinc-100 sm:px-6 lg:px-8">
+      <section className="w-full max-w-3xl overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0c0c0e]/90 shadow-2xl shadow-black/40 backdrop-blur-xl">
+        <div className="border-b border-white/[0.07] px-6 py-8 sm:px-10 sm:py-10">
+          <img src="/brand/fitz_logo.png" alt="FITz" className="h-11 w-auto object-contain" />
+          <div className="mt-8 max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.08] px-3 py-1 text-3xs font-medium uppercase tracking-wider text-emerald-300">
+              <ShieldCheck className="h-3.5 w-3.5" /> Production workspace
+            </div>
+            <h1 className="text-balance font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              Fitness coaching operations, built for Whop.
+            </h1>
+            <p className="max-w-xl text-pretty text-sm leading-6 text-zinc-400">
+              FITz opens inside an authorized Whop company or membership experience. Your dashboard and member portal are loaded from your real workspace—not sample accounts.
+            </p>
+          </div>
+        </div>
 
-          {/* Quick Seed Button */}
-          <div className="pt-2 flex items-center justify-center gap-3">
-            <button
-              onClick={handleSeedDemo}
-              disabled={isSeeding}
-              className="py-2 px-4 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white font-medium text-xs shadow-md shadow-[#1754d8]/25 transition-all flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSeeding ? "animate-spin" : ""}`} />
-              {isSeeding ? "Seeding Sandbox..." : "Reset & Prime Demo Data"}
-            </button>
-            {seedSuccess && (
-              <span className="text-xs font-normal text-emerald-400 flex items-center gap-1 animate-in fade-in">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Database Seeded!
+        <div className="grid gap-6 px-6 py-8 sm:grid-cols-[1.15fr_0.85fr] sm:px-10">
+          <div className="space-y-4">
+            <p className="text-3xs font-medium uppercase tracking-[0.16em] text-zinc-500">Included in your workspace</p>
+            <ul className="space-y-3">
+              {capabilities.map((capability) => (
+                <li key={capability} className="flex items-start gap-3 text-sm leading-5 text-zinc-300">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#4f7df3]" />
+                  <span>{capability}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-5">
+            <div className="flex gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#1754d8]/25 bg-[#1754d8]/10 text-[#6f98ff]">
+                <Users className="h-4 w-4" />
               </span>
-            )}
-          </div>
-        </div>
-
-        {/* Personas Sandbox Grid (Frosted Glass Elevation) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Card 1: Coach Workspace */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-xl shadow-black/40 space-y-4 hover:border-white/[0.14] transition-all flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 rounded-xl bg-[#1754d8]/15 text-[#1754d8] border border-[#1754d8]/30">
-                  <Users className="w-5 h-5" />
-                </div>
-                <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-[#1754d8]/20 text-[#1754d8] border border-[#1754d8]/30">
-                  Coach Portal
-                </span>
-              </div>
-
-              <div>
-                <h2 className="text-base font-display font-semibold text-white tracking-tight">
-                  Coach Alex Rivera Dashboard
-                </h2>
-                <p className="text-xs text-zinc-400 font-normal mt-1 leading-relaxed">
-                  Full multi-tenant coach workspace. Manage active clients, view live check-in feed, assign workout splits, and prevent subscription churn.
-                </p>
-              </div>
-
-              <div className="space-y-1.5 text-3xs font-mono text-zinc-400 pt-1">
-                <p className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>5 Enriched Demo Clients</span>
-                </p>
-                <p className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Real-Time Activity Feed & Photos</span>
-                </p>
-              </div>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-black/20 text-zinc-400">
+                <Dumbbell className="h-4 w-4" />
+              </span>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <Link
-                href="/dashboard/biz_coach_alex?demo=true"
-                className="w-full py-2.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:scale-[0.98] text-white font-medium text-xs border border-white/[0.08] transition-all flex items-center justify-center gap-1.5 group text-center"
+            <h2 className="mt-5 font-display text-lg font-semibold text-white">Open FITz from Whop</h2>
+            <p className="mt-2 text-xs leading-5 text-zinc-400">
+              Launch the app from your Whop dashboard or purchased experience so Whop can securely identify your workspace and access level.
+            </p>
+            <div className="mt-5 grid gap-2">
+              <a
+                href="https://whop.com/dashboard"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1754d8] px-4 text-xs font-medium text-white transition-[background-color,transform] duration-150 hover:bg-[#154ac0] active:scale-[0.98]"
               >
-                <span>Free Tier (5-Cap)</span>
-                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
+                Open Whop dashboard <ArrowRight className="h-3.5 w-3.5" />
+              </a>
               <Link
-                href="/dashboard/biz_coach_alex?demo=true&pro=true"
-                className="w-full py-2.5 px-3 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white font-medium text-xs shadow-md shadow-[#1754d8]/25 transition-all flex items-center justify-center gap-1.5 group text-center"
+                href="/discover"
+                className="flex min-h-11 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.07] hover:text-white"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Pro Tier (Unlimited)</span>
+                View FITz plans
               </Link>
             </div>
           </div>
-
-          {/* Card 2: Member Experience Portals */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-xl shadow-black/40 space-y-4 hover:border-white/[0.14] transition-all flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="p-2.5 rounded-xl bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
-                  <Dumbbell className="w-5 h-5" />
-                </div>
-                <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
-                  Member Experiences
-                </span>
-              </div>
-
-              <div>
-                <h2 className="text-base font-display font-semibold text-white tracking-tight">
-                  Client Member Experience Portals
-                </h2>
-                <p className="text-xs text-zinc-400 font-normal mt-1 leading-relaxed">
-                  Interactive client portal embedded inside Whop. Clients log weekly check-ins with photo uploads, review assigned splits, and track bodyweight.
-                </p>
-              </div>
-
-              {/* Persona Links */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
-                <Link
-                  href="/experiences/exp_marcus?demo=true"
-                  className="p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] active:scale-[0.98] border border-white/[0.06] text-center space-y-0.5 transition-all"
-                >
-                  <span className="text-xs font-medium text-white block">Marcus Chen</span>
-                  <span className="text-3xs text-emerald-400 font-mono">Active (4d/wk)</span>
-                </Link>
-
-                <Link
-                  href="/experiences/exp_sarah?demo=true"
-                  className="p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] active:scale-[0.98] border border-white/[0.06] text-center space-y-0.5 transition-all"
-                >
-                  <span className="text-xs font-medium text-white block">Sarah Jenkins</span>
-                  <span className="text-3xs text-amber-400 font-mono">At-Risk (12d ago)</span>
-                </Link>
-
-                <Link
-                  href="/experiences/exp_emma?demo=true"
-                  className="p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] active:scale-[0.98] border border-white/[0.06] text-center space-y-0.5 transition-all"
-                >
-                  <span className="text-xs font-medium text-white block">Emma Watson</span>
-                  <span className="text-3xs text-zinc-400 font-mono">Pending Intake</span>
-                </Link>
-              </div>
-            </div>
-
-            <Link
-              href="/experiences/exp_marcus?demo=true"
-              className="w-full py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-[#1754d8] hover:text-white active:scale-[0.98] text-white font-medium text-xs border border-white/[0.08] transition-all flex items-center justify-center gap-2 group"
-            >
-              <span>Open Marcus Portal (Active Member)</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
         </div>
-      </div>
+      </section>
     </main>
   );
 }

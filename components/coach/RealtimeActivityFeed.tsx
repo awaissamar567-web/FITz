@@ -32,8 +32,7 @@ export function RealtimeActivityFeed({
   useEffect(() => {
     const fetchFeed = async () => {
       try {
-        const isDemo = companyId.startsWith("biz_coach_alex") || companyId.startsWith("biz_");
-        const res = await fetch(`/api/coach/feed?companyId=${companyId}&limit=15${isDemo ? "&demo=true" : ""}`);
+        const res = await fetch(`/api/coach/feed?companyId=${companyId}&limit=15`);
         const data = await res.json();
         if (data.feed) {
           setFeed(data.feed);

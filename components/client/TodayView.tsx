@@ -41,7 +41,7 @@ export function TodayView({ client, plan: rawPlan, onNavigateToCheckin }: TodayV
       <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1754d8]/15 via-black/40 to-transparent border border-[#1754d8]/30 shadow-lg space-y-1.5">
         <div className="flex items-center justify-between text-3xs">
           <span className="font-semibold text-[#1754d8] flex items-center gap-1.5 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" /> Coach Alex's Directive
+            <Sparkles className="w-3.5 h-3.5" /> Coach Directive
           </span>
           <span className="text-zinc-400 font-mono">This Week's Focus</span>
         </div>
@@ -72,7 +72,7 @@ export function TodayView({ client, plan: rawPlan, onNavigateToCheckin }: TodayV
                 ⏳
               </div>
               <div>
-                <p className="text-xs font-medium text-white">Coach Alex Reviewing Assessment</p>
+                <p className="text-xs font-medium text-white">Coach Reviewing Assessment</p>
                 <p className="text-3xs text-zinc-500">Your custom workout split and nutrition targets are being finalized.</p>
               </div>
             </div>

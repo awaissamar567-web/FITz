@@ -6,16 +6,18 @@ import { Client, Checkin } from "@/types/database";
 
 interface HistoryViewProps {
   client: Client;
+  experienceId: string;
 }
 
-export function HistoryView({ client }: HistoryViewProps) {
+export function HistoryView({ client, experienceId }: HistoryViewProps) {
   const [checkins, setCheckins] = useState<Checkin[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch(`/api/client/plan?companyId=${client.company_id}&clientId=${client.id}`);
+        const params = new URLSearchParams({ companyId: client.company_id, experienceId });
+        const res = await fetch(`/api/client/plan?${params}`);
         const data = await res.json();
         if (data.checkins) {
           setCheckins(data.checkins);
@@ -28,7 +30,7 @@ export function HistoryView({ client }: HistoryViewProps) {
     };
 
     fetchHistory();
-  }, [client]);
+  }, [client, experienceId]);
 
   if (loading) {
     return (

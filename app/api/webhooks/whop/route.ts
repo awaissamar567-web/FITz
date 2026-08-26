@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { unwrapWebhook } from "@whop/sdk/helpers";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { createOrReactivateClient, deactivateClient } from "@/lib/services/clients";
@@ -91,27 +92,29 @@ const memoryWebhookEvents = new Set<string>();
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
-    const signature =
-      req.headers.get("whop-signature") ||
-      req.headers.get("webhook-signature") ||
-      req.headers.get("x-whop-signature");
-    const webhookId = req.headers.get("webhook-id") || req.headers.get("x-webhook-id");
-    const webhookTimestamp = req.headers.get("webhook-timestamp") || req.headers.get("x-webhook-timestamp");
     const secret = process.env.WHOP_WEBHOOK_SECRET || "";
 
-    // In testing/dev simulation:
-    const isTestBypass = req.headers.get("x-test-webhook") === "true";
-
-    if (!isTestBypass && secret && !verifyWebhookSignature(rawBody, signature, webhookId, webhookTimestamp, secret)) {
-      console.error("[Webhook] Rejected invalid webhook signature");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
-
     let payload: any;
-    try {
-      payload = JSON.parse(rawBody);
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+    const isTestBypass = process.env.NODE_ENV !== "production" && req.headers.get("x-test-webhook") === "true";
+    if (isTestBypass) {
+      try {
+        payload = JSON.parse(rawBody);
+      } catch {
+        return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+      }
+    } else {
+      if (!secret) {
+        console.error("[Webhook] WHOP_WEBHOOK_SECRET is not configured");
+        return NextResponse.json({ error: "Webhook is not configured" }, { status: 503 });
+      }
+      try {
+        payload = unwrapWebhook(rawBody, {
+          headers: Object.fromEntries(req.headers.entries()),
+          key: secret,
+        });
+      } catch {
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
     }
 
     const eventId = payload.id || payload.event_id || payload.data?.id;
@@ -155,8 +158,6 @@ export async function POST(req: NextRequest) {
       data.is_app_subscription === true ||
       data.product_id === "fitz_pro" ||
       data.plan_id === "plan_fitz_pro" ||
-      data.plan_id === "plan_mliEb2HaYIFBZ" ||
-      data.product_id === "plan_mliEb2HaYIFBZ" ||
       data.package_id === "fitz_pro" ||
       (Boolean(process.env.WHOP_PRO_PLAN_ID) && (data.plan_id === process.env.WHOP_PRO_PLAN_ID || data.product_id === process.env.WHOP_PRO_PLAN_ID)) ||
       (Boolean(process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID) && data.product_id === process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID);

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
+import { requireClientAccess } from "@/lib/whop-auth";
 import { getClientByWhopUserId, getClient } from "@/lib/services/clients";
 import { getCurrentPlan } from "@/lib/services/plans";
 import { listCheckins } from "@/lib/services/checkins";
@@ -11,43 +10,20 @@ import { getOrCreateCompany } from "@/lib/services/companies";
  */
 export async function GET(req: NextRequest) {
   try {
-    const headerList = await headers();
-    const rawToken = headerList.get("x-whop-user-token") || headerList.get("authorization")?.replace("Bearer ", "");
-    const testMockHeader = headerList.get("x-test-auth");
-    const devUserId = headerList.get("x-dev-user-id");
-
     const { searchParams } = new URL(req.url);
     const experienceId = searchParams.get("experienceId") || "exp_default";
     const companyId = searchParams.get("companyId") || "biz_default_coach";
-    const clientIdParam = searchParams.get("clientId");
-    const isDemo = searchParams.get("demo") === "true" || companyId.startsWith("biz_coach_alex") || companyId.startsWith("biz_");
-
-    const userId = rawToken
-      ? extractUserIdFromToken(rawToken)
-      : devUserId || (isDemo ? clientIdParam || "user_marcus" : null);
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Verify member access (bypass in demo mode)
-    if (!isDemo) {
-      const access = await evaluateWhopAccess(userId, experienceId, testMockHeader);
-      if (!access.has_access) {
-        return NextResponse.json({ error: "Forbidden: Access denied" }, { status: 403 });
-      }
-    }
+    const isDemo = process.env.NODE_ENV !== "production" && searchParams.get("demo") === "true";
+    const auth = await requireClientAccess(experienceId, isDemo);
+    const userId = auth.userId;
 
     const company = await getOrCreateCompany(companyId);
     if (!company) {
       return NextResponse.json({ error: "Company not found" }, { status: 404 });
     }
 
-    let client = clientIdParam ? await getClient(company.id, clientIdParam) : null;
-    if (!client) {
-      client = await getClientByWhopUserId(company.id, userId);
-    }
-    if (!client && experienceId) {
+    let client = await getClientByWhopUserId(company.id, userId);
+    if (!client && isDemo) {
       client = await getClientByWhopUserId(company.id, experienceId);
     }
 

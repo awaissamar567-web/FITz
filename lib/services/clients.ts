@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { Client, ClientStatus } from "@/types/database";
 
 const globalWithClients = globalThis as typeof globalThis & {
@@ -51,10 +51,12 @@ export async function getClient(
       .eq("id", clientId)
       .maybeSingle();
 
+    if (error && !isMockEnv) throw error;
     if (!error && data) {
       return data as Client;
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Clients] getClient remote error:", err);
   }
 
@@ -91,6 +93,7 @@ export async function getClientByWhopUserId(
       .eq("whop_user_id", whopUserId)
       .maybeSingle();
 
+    if (error && !isMockEnv) throw error;
     if (!error && data) {
       return data as Client;
     }
@@ -103,10 +106,12 @@ export async function getClientByWhopUserId(
       .eq("whop_experience_id", whopUserId)
       .maybeSingle();
 
+    if (expErr && !isMockEnv) throw expErr;
     if (!expErr && expData) {
       return expData as Client;
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Clients] getClientByWhopUserId remote error:", err);
   }
 
@@ -130,6 +135,22 @@ export async function getClientByWhopUserId(
   return null;
 }
 
+/** Resolve a member's tenant from webhook-provisioned Whop identifiers. */
+export async function getClientByExperienceAndUser(
+  experienceId: string,
+  whopUserId: string
+): Promise<Client | null> {
+  const { data, error } = await supabaseAdmin
+    .from("clients")
+    .select("*")
+    .eq("whop_experience_id", experienceId)
+    .eq("whop_user_id", whopUserId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as Client | null) || null;
+}
+
 /**
  * Lists clients for a given company, with optional status filter.
  * Uses composite index (company_id, status).
@@ -151,10 +172,12 @@ export async function listClients(
 
     const { data, error } = await query;
 
+    if (error && !isMockEnv) throw error;
     if (!error && data && data.length > 0) {
       return data as Client[];
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Clients] listClients remote error:", err);
   }
 
@@ -189,7 +212,7 @@ export async function createOrReactivateClient(
     company_id: companyId,
     whop_user_id: whopUserId,
     whop_experience_id: whopExperienceId,
-    display_name: "Marcus Vance",
+    display_name: null,
     units_preference: "kg",
     status: "active",
     intake_completed: true,
@@ -246,6 +269,7 @@ export async function createOrReactivateClient(
       return saved;
     }
   } catch (error) {
+    if (!isMockEnv) throw error;
     console.warn("[Clients] createOrReactivateClient fallback:", error);
   }
 
@@ -324,6 +348,7 @@ export async function updateClientIntake(
       return saved;
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Clients] updateClientIntake remote error, falling back to local:", err);
   }
 
@@ -332,7 +357,7 @@ export async function updateClientIntake(
     company_id: companyId,
     whop_user_id: clientId.replace("client_", ""),
     whop_experience_id: "exp_default",
-    display_name: intakeData.display_name || "Marcus Vance",
+    display_name: intakeData.display_name || null,
     units_preference: "kg",
     status: "active",
     intake_completed: true,
@@ -382,4 +407,3 @@ export async function updateClientSettings(
 
   return data as Client;
 }
-

@@ -1,21 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
+import { requireClientAccess } from "@/lib/whop-auth";
 import { getClientByWhopUserId, updateClientIntake, createOrReactivateClient } from "@/lib/services/clients";
 import { getOrCreateCompany } from "@/lib/services/companies";
 
 export async function POST(req: NextRequest) {
   try {
-    const headerList = await headers();
-    const rawToken = headerList.get("x-whop-user-token") || headerList.get("authorization")?.replace("Bearer ", "");
-    const testMockHeader = headerList.get("x-test-auth");
-    const devUserId = headerList.get("x-dev-user-id");
-    const userId = rawToken ? extractUserIdFromToken(rawToken) : devUserId;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized: Missing user token" }, { status: 401 });
-    }
-
     const body = await req.json();
     const { experienceId, companyId, display_name, fullName, name, goal, stats, experience_level, equipment, limitations } = body;
     const expId = experienceId || companyId || "exp_default";
@@ -24,11 +13,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required intake fields" }, { status: 400 });
     }
 
-    // Verify member access
-    const access = await evaluateWhopAccess(userId, expId, testMockHeader);
-    if (!access.has_access) {
-      return NextResponse.json({ error: "Forbidden: No access to this experience" }, { status: 403 });
-    }
+    const isDemo = process.env.NODE_ENV !== "production" && req.nextUrl.searchParams.get("demo") === "true";
+    const auth = await requireClientAccess(expId, isDemo);
+    const userId = auth.userId;
 
     // Resolve company
     const targetCompanyId = companyId || "biz_default_coach";

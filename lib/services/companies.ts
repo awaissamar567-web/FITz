@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 
 export interface Company {
   id: string;
@@ -13,6 +13,16 @@ export interface Company {
 }
 
 const memoryCompanies = new Map<string, Company>();
+
+export async function getCompanyById(companyId: string): Promise<Company | null> {
+  const { data, error } = await supabaseAdmin
+    .from("companies")
+    .select("*")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Company | null) || null;
+}
 
 /**
  * Retrieves existing company or provisions a new record for a newly installed coach.
@@ -32,6 +42,7 @@ export async function getOrCreateCompany(
       .eq("whop_company_id", whopCompanyId)
       .maybeSingle();
 
+    if (fetchError && !isMockEnv) throw fetchError;
     if (existing) {
       return existing as Company;
     }
@@ -50,10 +61,12 @@ export async function getOrCreateCompany(
       .select("*")
       .single();
 
+    if (insertError && !isMockEnv) throw insertError;
     if (!insertError && created) {
       return created as Company;
     }
   } catch (error) {
+    if (!isMockEnv) throw error;
     console.warn("[Companies] Remote company provision failed, using memory fallback:", error);
   }
 
@@ -64,7 +77,7 @@ export async function getOrCreateCompany(
   const fallback: Company = {
     id: `comp_${whopCompanyId}`,
     whop_company_id: whopCompanyId,
-    coach_name: coachName || (whopCompanyId.includes("alex") ? "Coach Alex Rivera" : "Head Coach"),
+    coach_name: coachName || "Coach",
     default_checkin_frequency: "weekly",
     units: "kg",
     at_risk_threshold_days: 7,

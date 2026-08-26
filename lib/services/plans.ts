@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { Plan, ExerciseItem, MacroTargets } from "@/types/database";
 
 const globalWithPlans = globalThis as typeof globalThis & {
@@ -59,10 +59,12 @@ export async function getCurrentPlan(
       .limit(1)
       .maybeSingle();
 
+    if (error && !isMockEnv) throw error;
     if (!error && data) {
       return data as Plan;
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Plans] Remote getCurrentPlan failed, falling back to memory:", err);
   }
 
@@ -79,6 +81,29 @@ export async function getCurrentPlan(
     }
   }
   return null;
+}
+
+/** Load a tenant's plans once for dashboard aggregation. */
+export async function listPlans(companyId: string): Promise<Plan[]> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("plans")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("updated_at", { ascending: false });
+
+    if (error && !isMockEnv) throw error;
+    if (!error && data) return data as Plan[];
+  } catch (error) {
+    if (!isMockEnv) throw error;
+  }
+
+  const seen = new Set<string>();
+  return Array.from(memoryPlans.values()).filter((plan) => {
+    if (seen.has(plan.id) || !cMatch(plan.company_id, companyId)) return false;
+    seen.add(plan.id);
+    return true;
+  });
 }
 
 /**
@@ -149,6 +174,7 @@ export async function savePlan(
       return saved;
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Plans] Remote savePlan failed, saving to memory fallback:", err);
   }
 
@@ -171,4 +197,3 @@ export async function savePlan(
   memoryPlans.set(`${companyId}:${mockPlan.client_id}`, mockPlan);
   return mockPlan;
 }
-

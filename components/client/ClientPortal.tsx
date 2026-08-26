@@ -58,6 +58,7 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
           <IntakeForm
             clientId={client.id}
             companyId={client.company_id}
+            experienceId={experienceId}
             onComplete={() => {
               setIntakeDone(true);
               setClient({ ...client, intake_completed: true });
@@ -79,6 +80,7 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
         body: JSON.stringify({
           companyId: client.company_id,
           clientId: client.id,
+          experienceId,
           display_name: displayName.trim(),
           units_preference: unitsPreference,
         }),
@@ -299,7 +301,7 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
           )}
 
           {activeTab === "history" && (
-            <HistoryView client={client} />
+            <HistoryView client={client} experienceId={experienceId} />
           )}
 
           {activeTab === "split" && (
@@ -372,7 +374,7 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
                       required
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="e.g. Marcus Chen"
+                      placeholder="Your display name"
                       className="w-full px-3.5 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white text-xs font-normal focus:outline-none focus:ring-1 focus:ring-[#1754d8]"
                     />
                   </div>

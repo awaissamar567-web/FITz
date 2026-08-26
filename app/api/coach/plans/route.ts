@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
+import { requireCoachAccess } from "@/lib/whop-auth";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { getClient } from "@/lib/services/clients";
 import { savePlan, getCurrentPlan } from "@/lib/services/plans";
@@ -9,16 +8,6 @@ import { ExerciseItem, MacroTargets } from "@/types/database";
 
 export async function POST(req: NextRequest) {
   try {
-    const headerList = await headers();
-    const rawToken = headerList.get("x-whop-user-token") || headerList.get("authorization")?.replace("Bearer ", "");
-    const testMockHeader = headerList.get("x-test-auth");
-    const devUserId = headerList.get("x-dev-user-id");
-    const userId = rawToken ? extractUserIdFromToken(rawToken) : devUserId;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const rawBody = await req.text();
     let body: any;
     try {
@@ -33,11 +22,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing companyId or clientId" }, { status: 400 });
     }
 
-    // Verify coach admin access
-    const access = await evaluateWhopAccess(userId, companyId, testMockHeader);
-    if (access.access_level !== "admin") {
-      return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
-    }
+    const isDemo = process.env.NODE_ENV !== "production" && req.nextUrl.searchParams.get("demo") === "true";
+    await requireCoachAccess(companyId, isDemo);
 
     const company = await getOrCreateCompany(companyId);
     if (!company) {

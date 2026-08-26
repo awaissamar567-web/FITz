@@ -385,7 +385,7 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
                     <div className="p-3 rounded-xl bg-[#1754d8]/10 border border-[#1754d8]/30 space-y-1">
                       <div className="flex items-center justify-between text-3xs">
                         <span className="font-semibold text-[#1754d8] flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" /> Coach Alex's Feedback
+                          <Sparkles className="w-3 h-3" /> Coach Feedback
                         </span>
                         <span className="text-zinc-500 font-mono">Reviewed</span>
                       </div>

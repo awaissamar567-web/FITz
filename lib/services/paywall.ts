@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { Company } from "@/types/database";
 import { listClients } from "@/lib/services/clients";
 
@@ -60,6 +60,7 @@ export async function updateCompanyPlan(
       return data as Company;
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Paywall] Remote updateCompanyPlan error, using fallback:", err);
   }
 

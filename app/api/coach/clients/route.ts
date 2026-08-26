@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
+import { requireCoachAccess } from "@/lib/whop-auth";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { listClients } from "@/lib/services/clients";
 import { listCheckins } from "@/lib/services/checkins";
@@ -8,32 +7,17 @@ import { ClientStatus } from "@/types/database";
 
 export async function GET(req: NextRequest) {
   try {
-    const headerList = await headers();
-    const rawToken = headerList.get("x-whop-user-token") || headerList.get("authorization")?.replace("Bearer ", "");
-    const testMockHeader = headerList.get("x-test-auth");
-    const devUserId = headerList.get("x-dev-user-id");
     const { searchParams } = new URL(req.url);
     const companyId = searchParams.get("companyId");
     const statusFilter = (searchParams.get("status") as ClientStatus) || undefined;
     const query = searchParams.get("query")?.toLowerCase() || "";
 
-    const userId = rawToken
-      ? extractUserIdFromToken(rawToken)
-      : devUserId || (companyId?.startsWith("biz_") ? `demo_coach_${companyId}` : null);
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     if (!companyId) {
       return NextResponse.json({ error: "Missing companyId parameter" }, { status: 400 });
     }
 
-    // Verify coach admin access
-    const access = await evaluateWhopAccess(userId, companyId, testMockHeader);
-    if (access.access_level !== "admin") {
-      return NextResponse.json({ error: "Forbidden: Admin access required for this coach workspace" }, { status: 403 });
-    }
+    const isDemo = process.env.NODE_ENV !== "production" && searchParams.get("demo") === "true";
+    await requireCoachAccess(companyId, isDemo);
 
     const company = await getOrCreateCompany(companyId);
     if (!company) {

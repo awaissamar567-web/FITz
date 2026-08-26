@@ -20,7 +20,7 @@ const testCases = [
       biz_coach_A: { has_access: true, access_level: "admin" },
     },
     expectedStatus: "ALLOWED",
-    expectedText: "Coach Dashboard",
+    expectedText: "Clients & Roster",
     forbiddenText: "Admin Access Required",
   },
   {
@@ -42,7 +42,7 @@ const testCases = [
       biz_coach_B: { has_access: true, access_level: "admin" },
     },
     expectedStatus: "ALLOWED",
-    expectedText: "Coach Dashboard",
+    expectedText: "Clients & Roster",
     forbiddenText: "Admin Access Required",
   },
   {

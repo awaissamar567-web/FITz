@@ -67,7 +67,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
   const [retentionFilter, setRetentionFilter] = useState<"all" | "overdue" | "intake" | "plan">("all");
 
   // Coach Settings Form State
-  const [coachName, setCoachName] = useState(company?.coach_name || "Coach Alex Rivera");
+  const [coachName, setCoachName] = useState(company?.coach_name || "");
   const [units, setUnits] = useState<"kg" | "lbs">(company?.units || "kg");
   const [checkinFrequency, setCheckinFrequency] = useState<"daily" | "weekly">(company?.default_checkin_frequency || "weekly");
   const [atRiskThreshold, setAtRiskThreshold] = useState<number>(company?.at_risk_threshold_days || 7);
@@ -177,7 +177,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
             <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md space-y-1 hover:border-white/[0.12] transition-colors">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-white truncate">
-                  {company?.coach_name || "Coach Alex"}
+                  {company?.coach_name || "Coach workspace"}
                 </span>
               </div>
               <p className="text-3xs font-mono text-zinc-500 truncate font-normal">
@@ -824,7 +824,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
                     required
                     value={coachName}
                     onChange={(e) => setCoachName(e.target.value)}
-                    placeholder="e.g. Coach Alex Rivera"
+                    placeholder="Your coaching name"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white text-xs font-normal focus:outline-none focus:ring-1 focus:ring-[#1754d8]"
                   />
                   <p className="text-3xs text-zinc-500 font-normal">This name is displayed to your clients across their portal views.</p>

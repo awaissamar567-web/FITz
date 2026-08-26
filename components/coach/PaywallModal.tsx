@@ -34,7 +34,7 @@ export function PaywallModal({
 
   const directCheckoutUrl =
     process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL ||
-    "https://whop.com/checkout/plan_mliEb2HaYIFBZ";
+    `https://whop.com/checkout/${process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID || ""}`;
 
   // Reset step whenever modal is reopened
   useEffect(() => {
@@ -48,37 +48,17 @@ export function PaywallModal({
   // Listen for Whop postMessage checkout completion
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
+      let trustedWhopOrigin = false;
+      try {
+        trustedWhopOrigin = new URL(event.origin).hostname.endsWith("whop.com");
+      } catch {}
       if (
+        trustedWhopOrigin &&
         event.data?.type === "whop:payment:success" ||
-        event.data?.action === "membership.activated" ||
-        event.data?.event === "checkout.completed"
+        (trustedWhopOrigin && event.data?.action === "membership.activated") ||
+        (trustedWhopOrigin && event.data?.event === "checkout.completed")
       ) {
         setIsSuccess(true);
-        if (onSuccess) onSuccess();
-
-        // Trigger local webhook upgrade
-        try {
-          await fetch("/api/webhooks/whop", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-test-webhook": "true",
-            },
-            body: JSON.stringify({
-              id: `evt_whop_checkout_${Date.now()}`,
-              action: "membership.activated",
-              data: {
-                company_id: companyId,
-                user_id: "user_coach_whop",
-                is_app_subscription: true,
-                plan_id: "plan_mliEb2HaYIFBZ",
-                package_id: "fitz_pro",
-              },
-            }),
-          });
-        } catch (e) {
-          console.error("Error triggering upgrade webhook:", e);
-        }
 
         setTimeout(() => {
           setIsSuccess(false);
@@ -232,7 +212,7 @@ export function PaywallModal({
           </div>
         ) : (
           /* =========================================================================
-             STEP 2: OFFICIAL INLINE WHOP CHECKOUT (plan_mliEb2HaYIFBZ)
+             STEP 2: OFFICIAL INLINE WHOP CHECKOUT
              ========================================================================= */
           <div className="relative w-full h-[620px] bg-[#0c0c0e] flex flex-col overflow-hidden animate-in fade-in duration-200">
             <iframe
@@ -247,6 +227,5 @@ export function PaywallModal({
     </div>
   );
 }
-
 
 

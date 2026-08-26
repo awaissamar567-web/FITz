@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
+import { requireClientAccess } from "@/lib/whop-auth";
 import { getClientByWhopUserId, createOrReactivateClient } from "@/lib/services/clients";
 import { createCheckin, listCheckins } from "@/lib/services/checkins";
 import { getOrCreateCompany } from "@/lib/services/companies";
@@ -10,33 +9,6 @@ import { getOrCreateCompany } from "@/lib/services/companies";
  */
 export async function POST(req: NextRequest) {
   try {
-    const headerList = await headers();
-    const rawToken = headerList.get("x-whop-user-token") || headerList.get("authorization")?.replace("Bearer ", "");
-    const testMockHeader = headerList.get("x-test-auth");
-    const devUserId = headerList.get("x-dev-user-id");
-    const userId = rawToken ? extractUserIdFromToken(rawToken) : devUserId;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized: Missing user token" }, { status: 401 });
-    }
-
-    // Rate Limiting (SECURITY.md #6): 10 checkin submissions per minute
-    const { checkRateLimit } = await import("@/lib/rate-limiter");
-    const rateLimit = checkRateLimit(`checkin:${userId}`, { limit: 10, windowSeconds: 60 });
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { error: "Too many check-in attempts. Please try again shortly." },
-        {
-          status: 429,
-          headers: {
-            "Retry-After": String(rateLimit.resetSeconds),
-            "X-RateLimit-Limit": String(rateLimit.totalLimit),
-            "X-RateLimit-Remaining": "0",
-          },
-        }
-      );
-    }
-
     const body = await req.json();
     const { experienceId, companyId, weight, photo_url, photoUrl, macro_hit, macroHit, notes, date } = body;
     const targetExpId = experienceId || companyId || "exp_default";
@@ -47,10 +19,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing experienceId" }, { status: 400 });
     }
 
-    // Verify member access
-    const access = await evaluateWhopAccess(userId, targetExpId, testMockHeader);
-    if (!access.has_access) {
-      return NextResponse.json({ error: "Forbidden: Access denied to experience" }, { status: 403 });
+    const isDemo = process.env.NODE_ENV !== "production" && req.nextUrl.searchParams.get("demo") === "true";
+    const auth = await requireClientAccess(targetExpId, isDemo);
+    const userId = auth.userId;
+
+    const { checkRateLimit } = await import("@/lib/rate-limiter");
+    const rateLimit = checkRateLimit(`checkin:${userId}`, { limit: 10, windowSeconds: 60 });
+    if (!rateLimit.allowed) {
+      return NextResponse.json({ error: "Too many check-in attempts. Please try again shortly." }, {
+        status: 429,
+        headers: { "Retry-After": String(rateLimit.resetSeconds) },
+      });
     }
 
     // Resolve company
@@ -102,16 +81,6 @@ export async function POST(req: NextRequest) {
  */
 export async function GET(req: NextRequest) {
   try {
-    const headerList = await headers();
-    const rawToken = headerList.get("x-whop-user-token") || headerList.get("authorization")?.replace("Bearer ", "");
-    const testMockHeader = headerList.get("x-test-auth");
-    const devUserId = headerList.get("x-dev-user-id");
-    const userId = rawToken ? extractUserIdFromToken(rawToken) : devUserId;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const experienceId = searchParams.get("experienceId") || "exp_default";
     const companyId = searchParams.get("companyId") || "biz_default_coach";
@@ -119,11 +88,9 @@ export async function GET(req: NextRequest) {
     const beforeDate = searchParams.get("beforeDate") || undefined;
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
-    // Verify member access
-    const access = await evaluateWhopAccess(userId, experienceId, testMockHeader);
-    if (!access.has_access) {
-      return NextResponse.json({ error: "Forbidden: Access denied" }, { status: 403 });
-    }
+    const isDemo = process.env.NODE_ENV !== "production" && searchParams.get("demo") === "true";
+    const auth = await requireClientAccess(experienceId, isDemo);
+    const userId = auth.userId;
 
     const company = await getOrCreateCompany(companyId);
     if (!company) {

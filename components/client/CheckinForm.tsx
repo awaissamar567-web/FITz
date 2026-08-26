@@ -32,6 +32,10 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
         setError("Please upload an image file (JPG, PNG, WebP).");
         return;
       }
+      if (file.size > 8 * 1024 * 1024) {
+        setError("Progress photos must be smaller than 8 MB.");
+        return;
+      }
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
       setError(null);
@@ -51,19 +55,16 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
     try {
       let photoUrl: string | null = null;
 
-      // 1. Convert photo to robust data URL if selected
+      // 1. Upload photos to private storage; never persist base64 blobs in Postgres.
       if (selectedFile) {
-        try {
-          const base64Data = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(selectedFile);
-          });
-          photoUrl = base64Data;
-        } catch {
-          console.warn("Local photo conversion failed, proceeding without photo");
-        }
+        const upload = new FormData();
+        upload.append("file", selectedFile);
+        upload.append("experienceId", experienceId || "exp_default");
+        upload.append("companyId", companyId);
+        const uploadResponse = await fetch("/api/client/photo-upload", { method: "POST", body: upload });
+        const uploadResult = await uploadResponse.json();
+        if (!uploadResponse.ok) throw new Error(uploadResult.error || "Photo upload failed");
+        photoUrl = uploadResult.photoUrl;
       }
 
       // 2. Submit check-in payload with experienceId and snake_case keys
@@ -239,6 +240,7 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
               <input
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -269,21 +271,19 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
         </div>
 
         {/* Submit CTA */}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-2.5 px-4 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white font-medium text-xs shadow-md shadow-[#1754d8]/25 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          {submitting ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Submitting Check-In...
-            </>
-          ) : (
-            <>
-              <Check className="w-4 h-4" /> Submit Weekly Check-In
-            </>
-          )}
-        </button>
+        <div className="sticky bottom-3 z-20 -mx-2 rounded-2xl border border-white/[0.08] bg-[#0c0c0e]/95 p-2 shadow-2xl shadow-black/50 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1754d8] px-4 py-2.5 text-xs font-medium text-white shadow-md shadow-[#1754d8]/25 transition-[background-color,transform,opacity] duration-150 hover:bg-[#154ac0] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {submitting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Submitting Check-In...</>
+            ) : (
+              <><Check className="w-4 h-4" /> Submit Weekly Check-In</>
+            )}
+          </button>
+        </div>
       </form>
     </div>
   );

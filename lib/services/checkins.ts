@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { Checkin, MacroAdherence } from "@/types/database";
 
 const globalWithCheckins = globalThis as typeof globalThis & {
@@ -7,6 +7,17 @@ const globalWithCheckins = globalThis as typeof globalThis & {
 export const memoryCheckins: Checkin[] =
   globalWithCheckins.__fitz_memory_checkins ||
   (globalWithCheckins.__fitz_memory_checkins = []);
+
+async function withSignedPhotoUrls(checkins: Checkin[]): Promise<Checkin[]> {
+  if (isMockEnv) return checkins;
+  return Promise.all(checkins.map(async (checkin) => {
+    if (!checkin.photo_url || /^https?:\/\//i.test(checkin.photo_url)) return checkin;
+    const { data, error } = await supabaseAdmin.storage
+      .from("checkin-photos")
+      .createSignedUrl(checkin.photo_url, 60 * 60);
+    return error ? { ...checkin, photo_url: null } : { ...checkin, photo_url: data.signedUrl };
+  }));
+}
 
 function cMatch(a: string, b: string): boolean {
   if (!a || !b) return false;
@@ -71,12 +82,14 @@ export async function createCheckin(
       .select("*")
       .single();
 
+    if (error && !isMockEnv) throw error;
     if (!error && data) {
       const saved = data as Checkin;
       memoryCheckins.unshift(saved);
       return saved;
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Checkins] Remote createCheckin failed, using memory fallback:", err);
   }
 
@@ -125,10 +138,12 @@ export async function listCheckins(
 
     const { data, error } = await query;
 
+    if (error && !isMockEnv) throw error;
     if (!error && data && data.length > 0) {
-      return data as Checkin[];
+      return withSignedPhotoUrls(data as Checkin[]);
     }
   } catch (err) {
+    if (!isMockEnv) throw err;
     console.warn("[Checkins] Remote listCheckins failed, returning memory list:", err);
   }
 
@@ -151,4 +166,3 @@ export async function listCheckins(
     })
     .slice(0, limit);
 }
-

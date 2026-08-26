@@ -3,11 +3,15 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://mock-fitz.supabase.co";
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "mock-service-role-key";
 
-const isMockEnv =
+export const isMockEnv =
   !process.env.SUPABASE_SERVICE_ROLE_KEY ||
   process.env.SUPABASE_SERVICE_ROLE_KEY.includes("mock") ||
   !process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL.includes("mock");
+
+if (process.env.NODE_ENV === "production" && isMockEnv) {
+  throw new Error("Production requires NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
+}
 
 /**
  * In-Memory Mock Database for isolated testing and local sandbox verification.
