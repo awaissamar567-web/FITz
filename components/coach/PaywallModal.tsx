@@ -6,25 +6,10 @@ import {
   CheckCircle2,
   X,
   Loader2,
-  ExternalLink,
   ArrowRight,
   ArrowLeft,
   Check
 } from "lucide-react";
-
-// Dynamically import WhopCheckoutEmbed with SSR disabled for optimal Next.js client-side rendering
-const WhopCheckoutEmbed = dynamic(
-  () => import("@whop/checkout/react").then((mod) => mod.WhopCheckoutEmbed),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex flex-col items-center justify-center p-12 min-h-[420px] gap-3 text-center">
-        <Loader2 className="w-6 h-6 animate-spin text-[#1a68ff]" />
-        <span className="text-xs text-zinc-400">Loading Secure Whop Inline Checkout...</span>
-      </div>
-    ),
-  }
-);
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -139,18 +124,6 @@ export function PaywallModal({
           </div>
 
           <div className="flex items-center gap-2">
-            {step === "checkout" && (
-              <a
-                href={directCheckoutUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1.5 rounded-lg bg-white/[0.04] text-zinc-400 hover:text-white transition-colors border border-white/[0.08] text-xs flex items-center gap-1 px-2"
-                title="Open checkout in new window"
-              >
-                <span className="hidden sm:inline text-3xs">New Tab</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            )}
             <button
               type="button"
               onClick={onClose}
@@ -251,50 +224,14 @@ export function PaywallModal({
           </div>
         ) : (
           /* =========================================================================
-             STEP 2: OFFICIAL NATIVE WHOP INLINE EMBED CHECKOUT (plan_mliEb2HaYIFBZ)
+             STEP 2: OFFICIAL INLINE WHOP CHECKOUT (plan_mliEb2HaYIFBZ)
              ========================================================================= */
-          <div className="w-full bg-[#0c0c0e] p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-            <WhopCheckoutEmbed
-              planId="plan_mliEb2HaYIFBZ"
-              theme="dark"
-              skipRedirect={true}
-              onComplete={async (planId, receiptId) => {
-                console.log("[Whop Checkout] Payment completed successfully:", planId, receiptId);
-                setIsSuccess(true);
-                if (onSuccess) onSuccess();
-
-                // Trigger local webhook upgrade
-                try {
-                  await fetch("/api/webhooks/whop", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      "x-test-webhook": "true",
-                    },
-                    body: JSON.stringify({
-                      id: `evt_whop_inline_${Date.now()}`,
-                      action: "membership.activated",
-                      data: {
-                        company_id: companyId,
-                        user_id: "user_coach_whop",
-                        is_app_subscription: true,
-                        plan_id: "plan_mliEb2HaYIFBZ",
-                        package_id: "fitz_pro",
-                      },
-                    }),
-                  });
-                } catch (e) {
-                  console.error("Error triggering upgrade webhook:", e);
-                }
-
-                setTimeout(() => {
-                  setIsSuccess(false);
-                  onClose();
-                  if (typeof window !== "undefined") {
-                    window.location.reload();
-                  }
-                }, 1500);
-              }}
+          <div className="relative w-full h-[620px] bg-[#0c0c0e] flex flex-col overflow-hidden animate-in fade-in duration-200">
+            <iframe
+              src={directCheckoutUrl}
+              title="Whop Checkout"
+              className="w-full h-full border-none flex-1 bg-[#0c0c0e]"
+              allow="payment *; clipboard-write *"
             />
           </div>
         )}
