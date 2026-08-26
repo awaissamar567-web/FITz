@@ -38,14 +38,17 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { experienceId, companyId, weight, photo_url, macro_hit, notes, date } = body;
+    const { experienceId, companyId, weight, photo_url, photoUrl, macro_hit, macroHit, notes, date } = body;
+    const targetExpId = experienceId || companyId || "exp_default";
+    const resolvedPhotoUrl = photo_url || photoUrl || null;
+    const resolvedMacroHit = macro_hit || macroHit || {};
 
-    if (!experienceId) {
+    if (!targetExpId) {
       return NextResponse.json({ error: "Missing experienceId" }, { status: 400 });
     }
 
     // Verify member access
-    const access = await evaluateWhopAccess(userId, experienceId, testMockHeader);
+    const access = await evaluateWhopAccess(userId, targetExpId, testMockHeader);
     if (!access.has_access) {
       return NextResponse.json({ error: "Forbidden: Access denied to experience" }, { status: 403 });
     }
@@ -71,8 +74,8 @@ export async function POST(req: NextRequest) {
     // Create checkin with explicit company_id and client_id binding
     const checkin = await createCheckin(company.id, client.id, {
       weight: weight ? parseFloat(weight) : undefined,
-      photo_url,
-      macro_hit: macro_hit || {},
+      photo_url: resolvedPhotoUrl || undefined,
+      macro_hit: resolvedMacroHit,
       notes,
       date,
     });

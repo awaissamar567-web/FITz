@@ -285,6 +285,7 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
             <CheckinForm
               clientId={client.id}
               companyId={client.company_id}
+              experienceId={experienceId}
               onCheckinComplete={() => {
                 setActiveTab("history");
                 setToast({

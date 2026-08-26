@@ -6,11 +6,12 @@ import { Upload, Scale, Utensils, MessageSquare, Check, Loader2, Camera, AlertCi
 interface CheckinFormProps {
   clientId: string;
   companyId: string;
+  experienceId?: string;
   onCheckinComplete: () => void;
 }
 
-export function CheckinForm({ clientId, companyId, onCheckinComplete }: CheckinFormProps) {
-  const [weight, setWeight] = useState<string>("78.5");
+export function CheckinForm({ clientId, companyId, experienceId, onCheckinComplete }: CheckinFormProps) {
+  const [weight, setWeight] = useState<string>("");
   const [hitMacros, setHitMacros] = useState<boolean>(true);
   const [calories, setCalories] = useState<string>("");
   const [protein, setProtein] = useState<string>("");
@@ -50,32 +51,29 @@ export function CheckinForm({ clientId, companyId, onCheckinComplete }: CheckinF
     try {
       let photoUrl: string | null = null;
 
-      // 1. Upload photo if selected
+      // 1. Convert photo to robust data URL if selected
       if (selectedFile) {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-        formData.append("companyId", companyId);
-        formData.append("clientId", clientId);
-
-        const uploadRes = await fetch("/api/client/photo-upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) {
-          throw new Error(uploadData.error || "Failed to upload photo");
+        try {
+          const base64Data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(selectedFile);
+          });
+          photoUrl = base64Data;
+        } catch {
+          console.warn("Local photo conversion failed, proceeding without photo");
         }
-        photoUrl = uploadData.photoUrl;
       }
 
-      // 2. Submit check-in payload
+      // 2. Submit check-in payload with experienceId and snake_case keys
       const checkinPayload = {
+        experienceId: experienceId || companyId || "exp_default",
         companyId,
         clientId,
         weight: parseFloat(weight),
-        photoUrl,
-        macroHit: {
+        photo_url: photoUrl,
+        macro_hit: {
           hitTarget: hitMacros,
           calories: calories ? parseInt(calories) : undefined,
           protein: protein ? parseInt(protein) : undefined,
@@ -84,6 +82,7 @@ export function CheckinForm({ clientId, companyId, onCheckinComplete }: CheckinF
           fiber: fiber ? parseInt(fiber) : undefined,
         },
         notes: notes.trim() || undefined,
+        date: new Date().toISOString().split("T")[0],
       };
 
       const res = await fetch("/api/client/checkin", {
