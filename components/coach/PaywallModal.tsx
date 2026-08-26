@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import {
   Sparkles,
   CheckCircle2,
@@ -13,6 +14,20 @@ import {
   ArrowLeft,
   Check
 } from "lucide-react";
+
+// Dynamically import WhopCheckoutEmbed with SSR disabled for optimal Next.js client-side rendering
+const WhopCheckoutEmbed = dynamic(
+  () => import("@whop/checkout/react").then((mod) => mod.WhopCheckoutEmbed),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-col items-center justify-center p-12 min-h-[420px] gap-3 text-center">
+        <Loader2 className="w-6 h-6 animate-spin text-[#1a68ff]" />
+        <span className="text-xs text-zinc-400">Loading Secure Whop Inline Checkout...</span>
+      </div>
+    ),
+  }
+);
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -246,21 +261,55 @@ export function PaywallModal({
           </div>
         ) : (
           /* =========================================================================
-             STEP 2: INLINE EMBED CHECKOUT (plan_mliEb2HaYIFBZ)
+             STEP 2: OFFICIAL WHOP INLINE EMBED CHECKOUT (plan_mliEb2HaYIFBZ)
              ========================================================================= */
-          <div className="relative flex-1 w-full h-[65vh] min-h-[460px] bg-[#0a0a0c] flex flex-col overflow-hidden animate-in fade-in duration-200">
-            {isIframeLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0a0a0c] z-20">
-                <Loader2 className="w-6 h-6 animate-spin text-[#1a68ff]" />
-                <span className="text-xs text-zinc-400">Loading Secure Whop Checkout...</span>
-              </div>
-            )}
-            <iframe
-              src={directCheckoutUrl}
-              title="Whop Pro Plan Checkout"
-              className="w-full h-full border-none flex-1"
-              allow="payment *; clipboard-write *"
-              onLoad={() => setIsIframeLoading(false)}
+          <div className="relative flex-1 w-full min-h-[500px] bg-[#0a0a0c] flex flex-col overflow-y-auto p-2 sm:p-4 animate-in fade-in duration-200">
+            <WhopCheckoutEmbed
+              planId="plan_mliEb2HaYIFBZ"
+              theme="dark"
+              themeOptions={{
+                accentColor: "blue",
+                borderRadius: 12,
+                buttonText: "Upgrade to FITz Pro — $25/mo",
+              }}
+              skipRedirect={true}
+              onComplete={async (planId, receiptId) => {
+                console.log("[Whop Checkout] Payment completed successfully:", planId, receiptId);
+                setIsSuccess(true);
+                if (onSuccess) onSuccess();
+
+                // Trigger local webhook upgrade
+                try {
+                  await fetch("/api/webhooks/whop", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      "x-test-webhook": "true",
+                    },
+                    body: JSON.stringify({
+                      id: `evt_whop_inline_${Date.now()}`,
+                      action: "membership.activated",
+                      data: {
+                        company_id: companyId,
+                        user_id: "user_coach_whop",
+                        is_app_subscription: true,
+                        plan_id: "plan_mliEb2HaYIFBZ",
+                        package_id: "fitz_pro",
+                      },
+                    }),
+                  });
+                } catch (e) {
+                  console.error("Error triggering upgrade webhook:", e);
+                }
+
+                setTimeout(() => {
+                  setIsSuccess(false);
+                  onClose();
+                  if (typeof window !== "undefined") {
+                    window.location.reload();
+                  }
+                }, 1500);
+              }}
             />
           </div>
         )}

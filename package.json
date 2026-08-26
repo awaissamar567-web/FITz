@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
+    "@whop/checkout": "^0.6.0",
     "@whop/react": "^0.1.0",
     "@whop/sdk": "^1.0.0",
     "lucide-react": "^0.475.0",
