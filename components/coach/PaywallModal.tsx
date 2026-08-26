@@ -12,6 +12,8 @@ import {
   Check
 } from "lucide-react";
 
+import { useCheckoutEmbedControls } from "@whop/checkout/react";
+
 // Dynamically import WhopCheckoutEmbed with SSR disabled for optimal Next.js client-side rendering
 const WhopCheckoutEmbed = dynamic(
   () => import("@whop/checkout/react").then((mod) => mod.WhopCheckoutEmbed),
@@ -41,9 +43,11 @@ export function PaywallModal({
   activeCount = 5,
   onSuccess,
 }: PaywallModalProps) {
+  const controlsRef = useCheckoutEmbedControls();
   // Step 1: "upgrade_card" (default) | Step 2: "checkout" (Inline Embed)
   const [step, setStep] = useState<"upgrade_card" | "checkout">("upgrade_card");
   const [isIframeLoading, setIsIframeLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const directCheckoutUrl =
@@ -107,6 +111,30 @@ export function PaywallModal({
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [companyId, onClose, onSuccess]);
+
+  const handleSubscribe = async () => {
+    setIsSubmitting(true);
+    try {
+      if (controlsRef.current?.submit) {
+        await controlsRef.current.submit();
+      } else {
+        // Direct postMessage fallback to embedded checkout iframe
+        const iframe = document.querySelector(
+          'iframe[title="Whop Embedded Checkout"]'
+        ) as HTMLIFrameElement | null;
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage(
+            { __scope: "whop-embedded-checkout", event: "submit" },
+            "*"
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Payment submit error:", err);
+    } finally {
+      setTimeout(() => setIsSubmitting(false), 3000);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -256,6 +284,7 @@ export function PaywallModal({
           <div className="relative w-full bg-[#0c0c0e] flex flex-col p-0 border-0 overflow-y-auto animate-in fade-in duration-200">
             <style jsx global>{`
               iframe[title="Whop Embedded Checkout"] {
+                min-height: 520px !important;
                 border: none !important;
                 outline: none !important;
                 box-shadow: none !important;
@@ -263,13 +292,14 @@ export function PaywallModal({
               }
             `}</style>
             <WhopCheckoutEmbed
+              ref={controlsRef}
               planId="plan_mliEb2HaYIFBZ"
               theme="dark"
               themeOptions={{
                 accentColor: "blue",
                 borderRadius: 0,
                 backgroundColor: "#0c0c0e",
-                buttonText: "Upgrade to FITz Pro — $25/mo",
+                buttonText: "Subscribe to FITz Pro — $25/mo",
               }}
               skipRedirect={true}
               onComplete={async (planId, receiptId) => {
@@ -313,9 +343,29 @@ export function PaywallModal({
           </div>
         )}
 
-        {/* Footer */}
-        <div className="px-5 py-3 border-t border-white/[0.06] bg-[#0c0c0e] flex items-center justify-center text-3xs text-zinc-500 shrink-0 tracking-wide font-medium">
-          <span>Powered by Whop</span>
+        {/* Footer with Subscribe CTA & Powered by Whop */}
+        <div className="px-5 py-3.5 border-t border-white/[0.08] bg-[#0c0c0e] flex flex-col items-center justify-center gap-2.5 shrink-0 tracking-wide font-medium">
+          {step === "checkout" && (
+            <button
+              type="button"
+              onClick={handleSubscribe}
+              disabled={isSubmitting}
+              className="w-full py-3.5 px-4 rounded-xl bg-[#1a68ff] hover:bg-[#1556d6] active:scale-[0.98] text-white font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-[#1a68ff]/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Processing Subscription...</span>
+                </>
+              ) : (
+                <>
+                  <span>Subscribe to FITz Pro — $25 / month</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          )}
+          <span className="text-3xs text-zinc-500">Powered by Whop</span>
         </div>
       </div>
     </div>
