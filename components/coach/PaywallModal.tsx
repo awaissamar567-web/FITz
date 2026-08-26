@@ -29,13 +29,23 @@ export function PaywallModal({
   activeCount = 5,
   onSuccess,
 }: PaywallModalProps) {
-  const [showFeatures, setShowFeatures] = useState(false);
+  // Step 1: "upgrade_card" (default) | Step 2: "checkout" (Inline Embed)
+  const [step, setStep] = useState<"upgrade_card" | "checkout">("upgrade_card");
   const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
 
   const directCheckoutUrl =
     process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL ||
     "https://whop.com/checkout/plan_mliEb2HaYIFBZ";
+
+  // Reset step whenever modal is reopened
+  useEffect(() => {
+    if (isOpen) {
+      setStep("upgrade_card");
+      setIsIframeLoading(true);
+      setIsSuccess(false);
+    }
+  }, [isOpen]);
 
   // Listen for Whop postMessage checkout completion
   useEffect(() => {
@@ -91,26 +101,27 @@ export function PaywallModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 font-sans">
       <div
-        className="relative w-full max-w-[540px] h-[85vh] max-h-[740px] overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0c0c0e] text-zinc-100 shadow-2xl transition-all flex flex-col"
+        className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0c0c0e] text-zinc-100 shadow-2xl transition-all flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header Bar */}
+        {/* Top Control Bar */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.08] bg-[#111114] shrink-0">
           <div className="flex items-center gap-2">
-            {showFeatures ? (
+            {step === "checkout" ? (
               <button
                 type="button"
-                onClick={() => setShowFeatures(false)}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors"
+                onClick={() => setStep("upgrade_card")}
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
-                <ArrowLeft className="w-3.5 h-3.5" /> Back to Checkout
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back to Plan Details</span>
               </button>
             ) : (
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-md bg-[#1a68ff] flex items-center justify-center text-white text-3xs font-black">
+                <div className="w-5 h-5 rounded-md bg-[#1a68ff] flex items-center justify-center text-white text-3xs font-black shadow-sm">
                   F
                 </div>
-                <span className="text-xs font-semibold text-white tracking-tight">FITz Pro Checkout</span>
+                <span className="text-xs font-semibold text-white tracking-tight">FITz Pro Upgrade</span>
                 <span className="text-3xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-medium border border-emerald-500/20">
                   $25 / month
                 </span>
@@ -119,31 +130,22 @@ export function PaywallModal({
           </div>
 
           <div className="flex items-center gap-2">
-            {!showFeatures && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowFeatures(true)}
-                  className="text-3xs text-zinc-400 hover:text-zinc-200 underline decoration-zinc-600 transition-colors px-1.5 py-0.5"
-                >
-                  Features
-                </button>
-                <a
-                  href={directCheckoutUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-lg bg-white/[0.04] text-zinc-400 hover:text-white transition-colors border border-white/[0.08] text-xs flex items-center gap-1 px-2"
-                  title="Open direct checkout in new window"
-                >
-                  <span className="hidden sm:inline text-3xs">New Tab</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </>
+            {step === "checkout" && (
+              <a
+                href={directCheckoutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 rounded-lg bg-white/[0.04] text-zinc-400 hover:text-white transition-colors border border-white/[0.08] text-xs flex items-center gap-1 px-2"
+                title="Open checkout in new window"
+              >
+                <span className="hidden sm:inline text-3xs">New Tab</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             )}
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+              className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -152,36 +154,54 @@ export function PaywallModal({
 
         {/* Modal Body */}
         {isSuccess ? (
-          <div className="p-8 flex flex-col items-center justify-center text-center space-y-4 py-20 flex-1 animate-in zoom-in-95 duration-200">
+          /* Success Screen */
+          <div className="p-8 flex flex-col items-center justify-center text-center space-y-4 py-16 animate-in zoom-in-95 duration-200">
             <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/20">
               <Check className="w-7 h-7 stroke-[2.5]" />
             </div>
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-white tracking-tight">Welcome to FITz Pro!</h3>
               <p className="text-xs text-zinc-400 max-w-xs">
-                Your subscription has been activated. Unlimited client roster and retention analytics are now unlocked.
+                Your subscription has been activated. Unlimited client roster and real-time retention analytics are now unlocked.
               </p>
             </div>
           </div>
-        ) : showFeatures ? (
-          /* Pro Features Screen */
-          <div className="p-6 space-y-5 flex-1 overflow-y-auto">
-            <div className="space-y-1">
+        ) : step === "upgrade_card" ? (
+          /* =========================================================================
+             STEP 1: THE UPGRADE CARD (Primary Initial Pop-up)
+             ========================================================================= */
+          <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 animate-in fade-in duration-150">
+            {/* Header / Cap Alert */}
+            <div className="space-y-2">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-3xs font-medium uppercase tracking-wider bg-amber-950/80 text-amber-300 border border-amber-800/60 font-sans">
                 <Sparkles className="w-3 h-3 text-amber-400" />
                 Free Tier Cap ({activeCount}/5 Clients)
               </div>
-              <h2 className="text-lg font-semibold text-white tracking-tight pt-1">
+              <h2 className="text-xl font-bold text-white tracking-tight pt-0.5">
                 Unlock Unlimited Clients with FITz Pro
               </h2>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Scale your fitness coaching business with unlimited roster capacity and real-time retention tools.
+                You’ve reached the 5-client capacity on the Free Tier. Upgrade to Pro to scale your coaching business without roster limits.
               </p>
             </div>
 
+            {/* Pricing Card Hero Box */}
+            <div className="rounded-xl border border-white/[0.08] bg-[#121215] p-4 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="text-3xs font-medium uppercase tracking-wider text-zinc-400">Subscription Plan</div>
+                <div className="text-sm font-semibold text-white">FITz Coach Pro</div>
+                <div className="text-3xs text-zinc-500">Billed monthly through Whop • Cancel anytime</div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white tracking-tight">$25</div>
+                <div className="text-3xs text-zinc-400">/ month</div>
+              </div>
+            </div>
+
+            {/* Feature List */}
             <div className="space-y-2.5 rounded-xl bg-white/[0.02] p-4 border border-white/[0.06]">
               <div className="text-3xs font-medium uppercase tracking-wider text-zinc-400">
-                Included in FITz Pro:
+                Everything Included in Pro:
               </div>
               <ul className="space-y-2.5 text-xs text-zinc-200 font-normal">
                 <li className="flex items-center gap-2.5">
@@ -190,7 +210,7 @@ export function PaywallModal({
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Live Activity Feed</strong> with instant check-in sync</span>
+                  <span><strong className="font-medium text-white">Live Activity Feed</strong> with real-time check-in sync</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -207,20 +227,28 @@ export function PaywallModal({
               </ul>
             </div>
 
-            <div className="pt-2">
+            {/* Action CTA Button */}
+            <div className="space-y-2 pt-1">
               <button
                 type="button"
-                onClick={() => setShowFeatures(false)}
-                className="w-full py-3 px-4 rounded-xl bg-[#1a68ff] hover:bg-[#1556d6] active:scale-[0.98] text-white font-medium text-xs transition-all shadow-md shadow-[#1a68ff]/30 flex items-center justify-center gap-2 cursor-pointer"
+                onClick={() => setStep("checkout")}
+                className="w-full py-3.5 px-4 rounded-xl bg-[#1a68ff] hover:bg-[#1556d6] active:scale-[0.98] text-white font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-[#1a68ff]/25 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Continue to Checkout ($25/mo)</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <span>Upgrade to FITz Pro — $25/mo</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
+              <div className="text-center">
+                <span className="text-3xs text-zinc-500">
+                  Instant activation via secure Whop Inline Checkout
+                </span>
+              </div>
             </div>
           </div>
         ) : (
-          /* Direct Whop Checkout Iframe (plan_mliEb2HaYIFBZ) */
-          <div className="relative flex-1 w-full bg-[#0a0a0c] flex flex-col overflow-hidden">
+          /* =========================================================================
+             STEP 2: INLINE EMBED CHECKOUT (plan_mliEb2HaYIFBZ)
+             ========================================================================= */
+          <div className="relative flex-1 w-full h-[65vh] min-h-[460px] bg-[#0a0a0c] flex flex-col overflow-hidden animate-in fade-in duration-200">
             {isIframeLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0a0a0c] z-20">
                 <Loader2 className="w-6 h-6 animate-spin text-[#1a68ff]" />
@@ -252,5 +280,6 @@ export function PaywallModal({
     </div>
   );
 }
+
 
 
