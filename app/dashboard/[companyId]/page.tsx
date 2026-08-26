@@ -14,6 +14,7 @@ interface DashboardPageProps {
   }>;
   searchParams?: Promise<{
     demo?: string;
+    pro?: string;
   }>;
 }
 
@@ -99,10 +100,15 @@ export default async function CoachDashboardPage({ params, searchParams }: Dashb
     })
   );
 
+  const isPro = sp.pro === "true";
+  const effectiveCompany = isPro
+    ? { ...company, plan: "pro" as const }
+    : company;
+
   return (
     <CoachDashboard
       companyId={companyId}
-      company={company}
+      company={effectiveCompany}
       initialClients={enrichedClients}
       initialFeed={initialFeed}
     />

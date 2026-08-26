@@ -295,12 +295,30 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
         {/* Sidebar Footer: Tier Status & Whop Portal */}
         <div className="space-y-3 pt-4 border-t border-white/[0.06]">
           {company?.plan === "pro" ? (
-            <div className="p-3 rounded-xl bg-[#1754d8]/10 border border-[#1754d8]/30 space-y-1">
-              <div className="flex items-center gap-1.5 text-xs text-[#1754d8] font-medium">
-                <Sparkles className="w-3.5 h-3.5" />
-                Fitz Pro Active
+            <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#1754d8]/20 via-[#1754d8]/10 to-transparent border border-[#1754d8]/40 space-y-2 shadow-lg shadow-[#1754d8]/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs text-[#3b82f6] font-semibold">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  FITz Pro Active
+                </div>
+                <span className="text-3xs uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1754d8]/30 text-[#60a5fa] font-mono font-medium">PRO</span>
               </div>
-              <p className="text-3xs text-zinc-400 font-normal">Unlimited client capacity</p>
+              <p className="text-3xs text-zinc-300 font-normal">Unlimited client capacity & real-time telemetry active</p>
+              <button
+                type="button"
+                onClick={() => {
+                  if (company) setCompany({ ...company, plan: "free" });
+                  setToast({
+                    id: Date.now().toString(),
+                    type: "info",
+                    title: "Switched to Free Tier View",
+                    message: "Previewing 5-client capacity cap and upgrade alerts.",
+                  });
+                }}
+                className="text-3xs text-zinc-400 hover:text-zinc-200 underline block pt-0.5 transition-colors"
+              >
+                Switch to Free View
+              </button>
             </div>
           ) : (
             <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-800/50 space-y-2">
@@ -321,6 +339,21 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
                 className="w-full py-1.5 px-2 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-[0.98] text-white text-3xs font-medium transition-colors flex items-center justify-center gap-1"
               >
                 <Sparkles className="w-3 h-3" /> Upgrade to Pro
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (company) setCompany({ ...company, plan: "pro" });
+                  setToast({
+                    id: Date.now().toString(),
+                    type: "success",
+                    title: "Switched to FITz Pro View",
+                    message: "Unlimited client capacity & real-time telemetry active.",
+                  });
+                }}
+                className="text-3xs text-[#3b82f6] hover:text-[#60a5fa] text-center w-full block pt-1 font-medium transition-colors"
+              >
+                ⚡ Switch to Pro View
               </button>
             </div>
           )}
@@ -953,6 +986,18 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
           onClose={() => setIsPaywallOpen(false)}
           companyId={companyId}
           activeCount={activeCount}
+          onSuccess={() => {
+            setIsPaywallOpen(false);
+            if (company) {
+              setCompany({ ...company, plan: "pro" });
+            }
+            setToast({
+              id: Date.now().toString(),
+              type: "success",
+              title: "Upgraded to FITz Pro!",
+              message: "Unlimited client capacity & real-time telemetry are now active.",
+            });
+          }}
         />
       )}
     </div>

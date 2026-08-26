@@ -103,13 +103,22 @@ export default function HomePage() {
               </div>
             </div>
 
-            <Link
-              href="/dashboard/biz_coach_alex?demo=true"
-              className="w-full py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-[#1754d8] hover:text-white active:scale-[0.98] text-white font-medium text-xs border border-white/[0.08] transition-all flex items-center justify-center gap-2 group"
-            >
-              <span>Launch Coach Workspace</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Link
+                href="/dashboard/biz_coach_alex?demo=true"
+                className="w-full py-2.5 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:scale-[0.98] text-white font-medium text-xs border border-white/[0.08] transition-all flex items-center justify-center gap-1.5 group text-center"
+              >
+                <span>Free Tier (5-Cap)</span>
+                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <Link
+                href="/dashboard/biz_coach_alex?demo=true&pro=true"
+                className="w-full py-2.5 px-3 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white font-medium text-xs shadow-md shadow-[#1754d8]/25 transition-all flex items-center justify-center gap-1.5 group text-center"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Pro Tier (Unlimited)</span>
+              </Link>
+            </div>
           </div>
 
           {/* Card 2: Member Experience Portals */}
