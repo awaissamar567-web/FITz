@@ -263,13 +263,22 @@ export function PaywallModal({
           /* =========================================================================
              STEP 2: OFFICIAL WHOP INLINE EMBED CHECKOUT (plan_mliEb2HaYIFBZ)
              ========================================================================= */
-          <div className="relative flex-1 w-full min-h-[500px] bg-[#0a0a0c] flex flex-col overflow-y-auto p-2 sm:p-4 animate-in fade-in duration-200">
+          <div className="relative w-full bg-[#0c0c0e] flex flex-col p-0 border-0 overflow-y-auto animate-in fade-in duration-200">
+            <style jsx global>{`
+              iframe[title="Whop Embedded Checkout"] {
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+              }
+            `}</style>
             <WhopCheckoutEmbed
               planId="plan_mliEb2HaYIFBZ"
               theme="dark"
               themeOptions={{
                 accentColor: "blue",
-                borderRadius: 12,
+                borderRadius: 0,
+                backgroundColor: "#0c0c0e",
                 buttonText: "Upgrade to FITz Pro — $25/mo",
               }}
               skipRedirect={true}
