@@ -63,7 +63,7 @@ async function runCoachFlowTestSuite() {
     }),
   });
 
-  await fetch(`${BASE_URL}/api/client/intake`, {
+  const intakeRes = await fetch(`${BASE_URL}/api/client/intake`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -77,6 +77,10 @@ async function runCoachFlowTestSuite() {
       stats: { currentWeight: 80.5, targetWeight: 76.0 },
     }),
   });
+  const intakeJson = await intakeRes.json();
+  if (intakeRes.status !== 200) {
+    console.warn("Intake Step 0 Result:", intakeRes.status, intakeJson);
+  }
 
   // TEST 1: Coach A retrieves client roster
   console.log("▶ TEST 1: Coach A loads client roster via API...");

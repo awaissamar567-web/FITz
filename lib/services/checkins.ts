@@ -3,6 +3,34 @@ import { Checkin, MacroAdherence } from "@/types/database";
 
 const memoryCheckins: Checkin[] = [];
 
+function cMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  let cleanA = a;
+  while (cleanA.startsWith("comp_") || cleanA.startsWith("biz_")) {
+    cleanA = cleanA.replace(/^(comp_|biz_)/, "");
+  }
+  let cleanB = b;
+  while (cleanB.startsWith("comp_") || cleanB.startsWith("biz_")) {
+    cleanB = cleanB.replace(/^(comp_|biz_)/, "");
+  }
+  return cleanA === cleanB;
+}
+
+function clMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  let cleanA = a;
+  while (cleanA.startsWith("client_") || cleanA.startsWith("user_")) {
+    cleanA = cleanA.replace(/^(client_|user_)/, "");
+  }
+  let cleanB = b;
+  while (cleanB.startsWith("client_") || cleanB.startsWith("user_")) {
+    cleanB = cleanB.replace(/^(client_|user_)/, "");
+  }
+  return cleanA === cleanB;
+}
+
 /**
  * Creates a check-in record.
  * Both company_id and client_id are explicitly recorded (denormalized company_id).
@@ -34,7 +62,9 @@ export async function createCheckin(
       .single();
 
     if (!error && data) {
-      return data as Checkin;
+      const saved = data as Checkin;
+      memoryCheckins.unshift(saved);
+      return saved;
     }
   } catch (err) {
     console.warn("[Checkins] Remote createCheckin failed, using memory fallback:", err);
@@ -85,7 +115,7 @@ export async function listCheckins(
 
     const { data, error } = await query;
 
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       return data as Checkin[];
     }
   } catch (err) {
@@ -96,14 +126,10 @@ export async function listCheckins(
     .filter(
       (c) =>
         (c.company_id === companyId ||
-          c.company_id === `comp_${companyId}` ||
-          `comp_${c.company_id}` === companyId ||
-          c.company_id.replace(/^comp_/, "") === companyId.replace(/^comp_/, "")) &&
+          cMatch(c.company_id, companyId)) &&
         (!clientId ||
           c.client_id === clientId ||
-          c.client_id === `client_${clientId}` ||
-          `client_${c.client_id}` === clientId ||
-          c.client_id.replace(/^client_/, "") === clientId.replace(/^client_/, ""))
+          clMatch(c.client_id, clientId))
     )
     .slice(0, limit);
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
-import { getClientByWhopUserId } from "@/lib/services/clients";
+import { getClientByWhopUserId, createOrReactivateClient } from "@/lib/services/clients";
 import { createCheckin, listCheckins } from "@/lib/services/checkins";
 import { getOrCreateCompany } from "@/lib/services/companies";
 
@@ -63,7 +63,6 @@ export async function POST(req: NextRequest) {
     // Resolve client
     let client = await getClientByWhopUserId(company.id, userId);
     if (!client) {
-      const { createOrReactivateClient } = await import("@/lib/services/clients");
       client = await createOrReactivateClient(company.id, userId, experienceId);
     }
 

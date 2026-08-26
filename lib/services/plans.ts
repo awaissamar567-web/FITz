@@ -3,6 +3,34 @@ import { Plan, ExerciseItem, MacroTargets } from "@/types/database";
 
 const memoryPlans = new Map<string, Plan>();
 
+function cMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  let cleanA = a;
+  while (cleanA.startsWith("comp_") || cleanA.startsWith("biz_")) {
+    cleanA = cleanA.replace(/^(comp_|biz_)/, "");
+  }
+  let cleanB = b;
+  while (cleanB.startsWith("comp_") || cleanB.startsWith("biz_")) {
+    cleanB = cleanB.replace(/^(comp_|biz_)/, "");
+  }
+  return cleanA === cleanB;
+}
+
+function clMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  let cleanA = a;
+  while (cleanA.startsWith("client_") || cleanA.startsWith("user_")) {
+    cleanA = cleanA.replace(/^(client_|user_)/, "");
+  }
+  let cleanB = b;
+  while (cleanB.startsWith("client_") || cleanB.startsWith("user_")) {
+    cleanB = cleanB.replace(/^(client_|user_)/, "");
+  }
+  return cleanA === cleanB;
+}
+
 /**
  * Retrieves current plan for a client.
  * Scoped by (company_id, client_id).
@@ -29,20 +57,18 @@ export async function getCurrentPlan(
   }
 
   // Fallback to local memory plan
-  const cleanId = companyId.replace(/^comp_/, "");
-  const cleanClientId = clientId.replace(/^client_/, "");
-  return (
-    memoryPlans.get(`${companyId}:${clientId}`) ||
-    memoryPlans.get(`comp_${cleanId}:${clientId}`) ||
-    memoryPlans.get(`${cleanId}:${clientId}`) ||
-    memoryPlans.get(`${companyId}:${cleanClientId}`) ||
-    memoryPlans.get(`comp_${cleanId}:${cleanClientId}`) ||
-    memoryPlans.get(`${cleanId}:${cleanClientId}`) ||
-    memoryPlans.get(`${companyId}:client_${cleanClientId}`) ||
-    memoryPlans.get(`comp_${cleanId}:client_${cleanClientId}`) ||
-    memoryPlans.get(`${cleanId}:client_${cleanClientId}`) ||
-    null
-  );
+  for (const plan of memoryPlans.values()) {
+    const compMatches =
+      plan.company_id === companyId ||
+      cMatch(plan.company_id, companyId);
+    const clientMatches =
+      plan.client_id === clientId ||
+      clMatch(plan.client_id, clientId);
+    if (compMatches && clientMatches) {
+      return plan;
+    }
+  }
+  return null;
 }
 
 /**
@@ -84,7 +110,12 @@ export async function savePlan(
         .single();
 
       if (!error && data) {
-        return data as Plan;
+        const saved = data as Plan;
+        const key = `${companyId}:${clientId}`;
+        memoryPlans.set(key, saved);
+        memoryPlans.set(saved.id, saved);
+        memoryPlans.set(`${companyId}:${saved.client_id}`, saved);
+        return saved;
       }
     }
 
@@ -100,7 +131,12 @@ export async function savePlan(
       .single();
 
     if (!error && data) {
-      return data as Plan;
+      const saved = data as Plan;
+      const key = `${companyId}:${clientId}`;
+      memoryPlans.set(key, saved);
+      memoryPlans.set(saved.id, saved);
+      memoryPlans.set(`${companyId}:${saved.client_id}`, saved);
+      return saved;
     }
   } catch (err) {
     console.warn("[Plans] Remote savePlan failed, saving to memory fallback:", err);
@@ -109,28 +145,20 @@ export async function savePlan(
   // In-memory fallback
   const key = `${companyId}:${clientId}`;
   const mockPlan: Plan = {
-    id: `plan_sandbox_${clientId}`,
+    id: `plan_sandbox_${Date.now()}`,
     company_id: companyId,
     client_id: clientId,
     split_name: planData.split_name,
     exercises: planData.exercises,
     macros: planData.macros,
-    schedule: planData.schedule,
+    schedule: planData.schedule || undefined,
     pdf_url: planData.pdf_url || undefined,
     updated_at: new Date().toISOString(),
   };
 
-  const cleanId = companyId.replace(/^comp_/, "");
-  const cleanClientId = clientId.replace(/^client_/, "");
-  memoryPlans.set(`${companyId}:${clientId}`, mockPlan);
-  memoryPlans.set(`comp_${cleanId}:${clientId}`, mockPlan);
-  memoryPlans.set(`${cleanId}:${clientId}`, mockPlan);
-  memoryPlans.set(`${companyId}:${cleanClientId}`, mockPlan);
-  memoryPlans.set(`comp_${cleanId}:${cleanClientId}`, mockPlan);
-  memoryPlans.set(`${cleanId}:${cleanClientId}`, mockPlan);
-  memoryPlans.set(`${companyId}:client_${cleanClientId}`, mockPlan);
-  memoryPlans.set(`comp_${cleanId}:client_${cleanClientId}`, mockPlan);
-  memoryPlans.set(`${cleanId}:client_${cleanClientId}`, mockPlan);
+  memoryPlans.set(key, mockPlan);
+  memoryPlans.set(mockPlan.id, mockPlan);
+  memoryPlans.set(`${companyId}:${mockPlan.client_id}`, mockPlan);
   return mockPlan;
 }
 

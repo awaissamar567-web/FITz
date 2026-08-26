@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { extractUserIdFromToken, evaluateWhopAccess } from "@/lib/whop-auth";
-import { getClientByWhopUserId, updateClientIntake } from "@/lib/services/clients";
+import { getClientByWhopUserId, updateClientIntake, createOrReactivateClient } from "@/lib/services/clients";
 import { getOrCreateCompany } from "@/lib/services/companies";
 
 export async function POST(req: NextRequest) {
@@ -40,8 +40,6 @@ export async function POST(req: NextRequest) {
     // Resolve client
     let client = await getClientByWhopUserId(company.id, userId);
     if (!client) {
-      // Auto-create client row if not exists
-      const { createOrReactivateClient } = await import("@/lib/services/clients");
       client = await createOrReactivateClient(company.id, userId, expId);
     }
 

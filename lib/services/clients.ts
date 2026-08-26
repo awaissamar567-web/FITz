@@ -3,6 +3,34 @@ import { Client, ClientStatus } from "@/types/database";
 
 const memoryClients = new Map<string, Client>();
 
+function cMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  let cleanA = a;
+  while (cleanA.startsWith("comp_") || cleanA.startsWith("biz_")) {
+    cleanA = cleanA.replace(/^(comp_|biz_)/, "");
+  }
+  let cleanB = b;
+  while (cleanB.startsWith("comp_") || cleanB.startsWith("biz_")) {
+    cleanB = cleanB.replace(/^(comp_|biz_)/, "");
+  }
+  return cleanA === cleanB;
+}
+
+function clMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  let cleanA = a;
+  while (cleanA.startsWith("client_") || cleanA.startsWith("user_")) {
+    cleanA = cleanA.replace(/^(client_|user_)/, "");
+  }
+  let cleanB = b;
+  while (cleanB.startsWith("client_") || cleanB.startsWith("user_")) {
+    cleanB = cleanB.replace(/^(client_|user_)/, "");
+  }
+  return cleanA === cleanB;
+}
+
 /**
  * Retrieves a client by ID, strictly scoped by company_id.
  */
@@ -28,14 +56,13 @@ export async function getClient(
   for (const client of memoryClients.values()) {
     const compMatches =
       client.company_id === companyId ||
-      client.company_id === `comp_${companyId}` ||
-      `comp_${client.company_id}` === companyId;
+      cMatch(client.company_id, companyId);
     if (
       compMatches &&
       (client.id === clientId ||
         client.whop_user_id === clientId ||
-        `client_${client.whop_user_id}` === clientId ||
-        client.id === `client_${clientId}`)
+        clMatch(client.id, clientId) ||
+        clMatch(client.whop_user_id, clientId))
     ) {
       return client;
     }
@@ -66,19 +93,16 @@ export async function getClientByWhopUserId(
     console.warn("[Clients] getClientByWhopUserId remote error:", err);
   }
 
-  const cleanCompId = companyId.replace(/^comp_/, "");
   for (const client of memoryClients.values()) {
     const compMatches =
       client.company_id === companyId ||
-      client.company_id === `comp_${companyId}` ||
-      `comp_${client.company_id}` === companyId ||
-      client.company_id.replace(/^comp_/, "") === cleanCompId;
+      cMatch(client.company_id, companyId);
     if (
       compMatches &&
       (client.whop_user_id === whopUserId ||
-        client.whop_user_id === `user_${whopUserId}` ||
-        `user_${client.whop_user_id}` === whopUserId ||
-        client.id === whopUserId)
+        client.id === whopUserId ||
+        clMatch(client.whop_user_id, whopUserId) ||
+        clMatch(client.id, whopUserId))
     ) {
       return client;
     }
@@ -115,11 +139,19 @@ export async function listClients(
     console.warn("[Clients] listClients remote error:", err);
   }
 
+  const seenIds = new Set<string>();
   const list = Array.from(memoryClients.values()).filter(
-    (c) =>
-      c.company_id === companyId ||
-      c.company_id === `comp_${companyId}` ||
-      `comp_${c.company_id}` === companyId
+    (c) => {
+      if (seenIds.has(c.id)) return false;
+      const matchesCompany =
+        c.company_id === companyId ||
+        cMatch(c.company_id, companyId);
+      if (matchesCompany) {
+        seenIds.add(c.id);
+        return true;
+      }
+      return false;
+    }
   );
   return statusFilter ? list.filter((c) => c.status === statusFilter) : list;
 }
@@ -188,7 +220,11 @@ export async function createOrReactivateClient(
       .single();
 
     if (!error && data) {
-      return data as Client;
+      const saved = data as Client;
+      memoryClients.set(saved.id, saved);
+      memoryClients.set(`${companyId}:${whopUserId}`, saved);
+      memoryClients.set(`${companyId}:${saved.id}`, saved);
+      return saved;
     }
   } catch (error) {
     console.warn("[Clients] createOrReactivateClient fallback:", error);
@@ -196,6 +232,8 @@ export async function createOrReactivateClient(
 
   const key = `${companyId}:${whopUserId}`;
   memoryClients.set(key, mockClient);
+  memoryClients.set(mockClient.id, mockClient);
+  memoryClients.set(`${companyId}:${mockClient.id}`, mockClient);
   return mockClient;
 }
 
@@ -260,7 +298,11 @@ export async function updateClientIntake(
       .single();
 
     if (!error && data) {
-      return data as Client;
+      const saved = data as Client;
+      memoryClients.set(saved.id, saved);
+      memoryClients.set(clientId, saved);
+      memoryClients.set(`${companyId}:${saved.whop_user_id}`, saved);
+      return saved;
     }
   } catch (err) {
     console.warn("[Clients] updateClientIntake remote error, falling back to local:", err);
