@@ -31,13 +31,21 @@ export function AccessDenied({
           Security Boundary: Tenant Isolation Enforced
         </div>
 
-        <Link
-          href="/"
-          className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] text-white text-xs font-medium transition-colors shadow-md shadow-[#1754d8]/20"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Return to Portal
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Link
+            href="?demo=true"
+            className="inline-flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-white text-xs font-medium transition-colors border border-white/[0.1]"
+          >
+            Launch Demo Sandbox
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] text-white text-xs font-medium transition-colors shadow-md shadow-[#1754d8]/20"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Home
+          </Link>
+        </div>
       </div>
     </div>
   );
