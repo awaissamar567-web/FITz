@@ -44,58 +44,13 @@ const DAYS_OF_WEEK: DayOfWeek[] = [
 ];
 
 const DEFAULT_SCHEDULE: { [day in DayOfWeek]: { splitName: string; exercises: ExerciseItem[] } } = {
-  Monday: {
-    splitName: "Push (Chest, Shoulders & Triceps)",
-    exercises: [
-      { name: "Flat Barbell Bench Press", sets: 4, reps: "8-10 reps", notes: "Heavy compound, 2 min rest" },
-      { name: "Incline Dumbbell Press", sets: 3, reps: "10-12 reps", notes: "Full stretch, controlled eccentric" },
-      { name: "Cable Lateral Raises", sets: 4, reps: "12-15 reps", notes: "Strict form, focus on side delts" },
-      { name: "Overhead Rope Tricep Extension", sets: 3, reps: "12-15 reps", notes: "Lockout squeeze" },
-    ],
-  },
-  Tuesday: {
-    splitName: "Pull (Back & Biceps)",
-    exercises: [
-      { name: "Lat Pulldown (Wide Grip)", sets: 4, reps: "8-10 reps", notes: "Pull with elbows, full stretch" },
-      { name: "Chest-Supported Dumbbell Row", sets: 3, reps: "10-12 reps", notes: "Squeeze lats at peak" },
-      { name: "Face Pulls", sets: 3, reps: "15 reps", notes: "Rear delt and rotator cuff focus" },
-      { name: "Incline Dumbbell Bicep Curls", sets: 3, reps: "10-12 reps", notes: "Supinate at top" },
-    ],
-  },
-  Wednesday: {
-    splitName: "Legs & Core",
-    exercises: [
-      { name: "Barbell Back Squat", sets: 4, reps: "6-8 reps", notes: "Below parallel depth" },
-      { name: "Romanian Deadlift", sets: 3, reps: "8-10 reps", notes: "Hamstring stretch, neutral spine" },
-      { name: "Leg Press & Calf Raise Superset", sets: 3, reps: "12-15 reps", notes: "Controlled tempo" },
-      { name: "Hanging Leg Raises", sets: 3, reps: "15 reps", notes: "Strict core bracing" },
-    ],
-  },
-  Thursday: {
-    splitName: "Rest & Active Recovery",
-    exercises: [],
-  },
-  Friday: {
-    splitName: "Upper Body Hypertrophy",
-    exercises: [
-      { name: "Standing Overhead DB Press", sets: 3, reps: "8-10 reps", notes: "Core braced" },
-      { name: "Incline Cable Flyes", sets: 3, reps: "12-15 reps", notes: "Continuous tension" },
-      { name: "Seated Cable Row", sets: 3, reps: "10-12 reps", notes: "Elbows close to torso" },
-      { name: "Hammer Curls & Skullcrushers Superset", sets: 3, reps: "12 reps", notes: "Arm burnout" },
-    ],
-  },
-  Saturday: {
-    splitName: "Lower Body & Conditioning",
-    exercises: [
-      { name: "Bulgarian Split Squats", sets: 3, reps: "10-12 reps/leg", notes: "Quad & glute focus" },
-      { name: "Hamstring Leg Curl Machine", sets: 4, reps: "12-15 reps", notes: "2 sec pause at top" },
-      { name: "Walking Dumbbell Lunges", sets: 3, reps: "20 steps", notes: "Steady pace" },
-    ],
-  },
-  Sunday: {
-    splitName: "Rest Day",
-    exercises: [],
-  },
+  Monday: { splitName: "", exercises: [] },
+  Tuesday: { splitName: "", exercises: [] },
+  Wednesday: { splitName: "", exercises: [] },
+  Thursday: { splitName: "", exercises: [] },
+  Friday: { splitName: "", exercises: [] },
+  Saturday: { splitName: "", exercises: [] },
+  Sunday: { splitName: "", exercises: [] },
 };
 
 export function WorkoutProgramsView({
@@ -111,19 +66,19 @@ export function WorkoutProgramsView({
   // Active day selected for exercise breakdown
   const [activeDay, setActiveDay] = useState<DayOfWeek>("Monday");
 
-  // 7-day schedule & exercises map per client
+  // 7-day schedule & exercises map per client (Clean, unpopulated by default)
   const [scheduleState, setScheduleState] = useState<{
     [day in DayOfWeek]: { splitName: string; exercises: ExerciseItem[] };
   }>(DEFAULT_SCHEDULE);
 
-  // Nutritional Macro targets
-  const [calories, setCalories] = useState<string>("2400");
-  const [protein, setProtein] = useState<string>("180");
-  const [carbs, setCarbs] = useState<string>("250");
-  const [fats, setFats] = useState<string>("65");
-  const [sodium, setSodium] = useState<string>("2300");
-  const [sugar, setSugar] = useState<string>("35");
-  const [fiber, setFiber] = useState<string>("30");
+  // Nutritional Macro targets (Clean, no pre-filled defaults)
+  const [calories, setCalories] = useState<string>("");
+  const [protein, setProtein] = useState<string>("");
+  const [carbs, setCarbs] = useState<string>("");
+  const [fats, setFats] = useState<string>("");
+  const [sodium, setSodium] = useState<string>("");
+  const [sugar, setSugar] = useState<string>("");
+  const [fiber, setFiber] = useState<string>("");
 
   // PDF Routine Upload State
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -194,12 +149,15 @@ export function WorkoutProgramsView({
             setScheduleState(loadedSchedule);
           }
         } else {
-          // Reset to clean template for new client
+          // Reset to clean template for new client (no pre-filled information)
           setScheduleState(DEFAULT_SCHEDULE);
-          setCalories("2400");
-          setProtein("180");
-          setCarbs("250");
-          setFats("65");
+          setCalories("");
+          setProtein("");
+          setCarbs("");
+          setFats("");
+          setSodium("");
+          setSugar("");
+          setFiber("");
           setPdfUrl(null);
         }
       } catch (err) {
@@ -223,12 +181,12 @@ export function WorkoutProgramsView({
     }));
   };
 
-  // Handler to add exercise to the currently active day
+  // Handler to add exercise to the currently active day (clean blank item)
   const handleAddExerciseToActiveDay = () => {
-    const currentDayData = scheduleState[activeDay] || { splitName: "Custom Split", exercises: [] };
+    const currentDayData = scheduleState[activeDay] || { splitName: "", exercises: [] };
     const updatedExercises: ExerciseItem[] = [
       ...currentDayData.exercises,
-      { name: "New Exercise", sets: 3, reps: "8-12 reps", notes: "RPE 8" },
+      { name: "", sets: "", reps: "", notes: "" },
     ];
 
     setScheduleState((prev) => ({
@@ -542,7 +500,8 @@ export function WorkoutProgramsView({
                         <input
                           type="number"
                           value={ex.sets}
-                          onChange={(e) => handleUpdateExercise(idx, "sets", parseInt(e.target.value) || 3)}
+                          onChange={(e) => handleUpdateExercise(idx, "sets", e.target.value === "" ? "" : parseInt(e.target.value) || "")}
+                          placeholder="e.g. 4"
                           className="w-full px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-[#0c0c0e]/90 text-white text-xs font-mono focus:outline-none focus:border-[#1754d8] focus:ring-1 focus:ring-[#1754d8]"
                         />
                       </div>
@@ -555,7 +514,7 @@ export function WorkoutProgramsView({
                           type="text"
                           value={ex.reps}
                           onChange={(e) => handleUpdateExercise(idx, "reps", e.target.value)}
-                          placeholder="8-12 reps"
+                          placeholder="e.g. 8-12 reps"
                           className="w-full px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-[#0c0c0e]/90 text-white text-xs font-mono focus:outline-none focus:border-[#1754d8] focus:ring-1 focus:ring-[#1754d8]"
                         />
                       </div>
@@ -604,6 +563,7 @@ export function WorkoutProgramsView({
                   type="number"
                   value={calories}
                   onChange={(e) => setCalories(e.target.value)}
+                  placeholder="e.g. 2400"
                   className="w-full px-3 py-2 rounded-xl border border-white/[0.08] bg-[#0c0c0e]/90 text-white text-xs font-mono focus:outline-none focus:border-[#1754d8] focus:ring-1 focus:ring-[#1754d8]"
                 />
               </div>
@@ -616,6 +576,7 @@ export function WorkoutProgramsView({
                   type="number"
                   value={protein}
                   onChange={(e) => setProtein(e.target.value)}
+                  placeholder="e.g. 180"
                   className="w-full px-3 py-2 rounded-xl border border-white/[0.08] bg-[#0c0c0e]/90 text-white text-xs font-mono focus:outline-none focus:border-[#1754d8] focus:ring-1 focus:ring-[#1754d8]"
                 />
               </div>
@@ -628,6 +589,7 @@ export function WorkoutProgramsView({
                   type="number"
                   value={carbs}
                   onChange={(e) => setCarbs(e.target.value)}
+                  placeholder="e.g. 250"
                   className="w-full px-3 py-2 rounded-xl border border-white/[0.08] bg-[#0c0c0e]/90 text-white text-xs font-mono focus:outline-none focus:border-[#1754d8] focus:ring-1 focus:ring-[#1754d8]"
                 />
               </div>
@@ -640,6 +602,7 @@ export function WorkoutProgramsView({
                   type="number"
                   value={fats}
                   onChange={(e) => setFats(e.target.value)}
+                  placeholder="e.g. 65"
                   className="w-full px-3 py-2 rounded-xl border border-white/[0.08] bg-[#0c0c0e]/90 text-white text-xs font-mono focus:outline-none focus:border-[#1754d8] focus:ring-1 focus:ring-[#1754d8]"
                 />
               </div>
