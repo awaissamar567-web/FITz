@@ -17,7 +17,7 @@ export function PaywallModal({ isOpen, onClose, activeCount }: PaywallModalProps
 
   const proPlanCheckoutUrl =
     process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL ||
-    `https://whop.com/checkout/${process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID || "plan_fitz_pro"}`;
+    "https://whop.com/alpha-desk-a604/api-app-tf-h2-bk5s-mu-v3-uo-fi-tz-pro-plan/";
 
   const handleUpgrade = () => {
     setIsUpgrading(true);
@@ -91,7 +91,7 @@ export function PaywallModal({ isOpen, onClose, activeCount }: PaywallModalProps
           <div className="space-y-3 pt-1">
             <div className="flex items-baseline justify-between">
               <div>
-                <span className="text-2xl font-display font-semibold text-white tracking-tight">$29</span>
+                <span className="text-2xl font-display font-semibold text-white tracking-tight">$25</span>
                 <span className="text-xs font-normal text-zinc-400"> / month</span>
               </div>
               <span className="text-3xs text-emerald-400 font-medium flex items-center gap-1 font-sans">
@@ -110,7 +110,7 @@ export function PaywallModal({ isOpen, onClose, activeCount }: PaywallModalProps
                 </>
               ) : (
                 <>
-                  <span>Upgrade to Pro ($29/mo)</span>
+                  <span>Upgrade to Pro ($25/mo)</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </>
               )}
