@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
-import { WhopClient } from "@whop/sdk";
 import { whopsdk } from "@/lib/whop-sdk";
+import { whopAppSdk } from "@/lib/whop-app-sdk";
 
 export interface AuthContext {
   userId: string;
@@ -36,15 +36,11 @@ function decodeTestUserId(token: string): string | null {
   }
 }
 
-/** Validate the incoming token by asking Whop for its authenticated user. */
+/** Validate the signed iframe JWT and return its Whop user ID. */
 async function verifyWhopUserToken(token: string): Promise<string> {
-  const userClient = new WhopClient({
-    token,
-    baseUrl: process.env.WHOP_BASE_URL || undefined,
-  });
-  const user = await userClient.users.me();
-  if (!user?.id) throw new Error("Whop token did not resolve a user");
-  return user.id;
+  const { userId } = await whopAppSdk.verifyUserToken(token);
+  if (!userId) throw new Error("Whop token did not resolve a user");
+  return userId;
 }
 
 async function requestIdentity(resourceId: string, role: "coach" | "client", allowDemo = false) {
