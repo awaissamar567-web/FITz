@@ -34,6 +34,16 @@ export async function getOrCreateCompany(
 ): Promise<Company | null> {
   if (!whopCompanyId) return null;
 
+  // Client-facing APIs receive the internal company UUID stored on the client
+  // record. Resolve it directly instead of treating it as a new Whop biz ID.
+  const isInternalCompanyId =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      whopCompanyId
+    );
+  if (isInternalCompanyId) {
+    return getCompanyById(whopCompanyId);
+  }
+
   try {
     // 1. Try to fetch existing
     const { data: existing, error: fetchError } = await supabaseAdmin
