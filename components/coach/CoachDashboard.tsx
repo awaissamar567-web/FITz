@@ -842,7 +842,9 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
                       {company?.plan || "Free"} Tier
                     </div>
                     <p className="text-3xs text-zinc-400 font-normal">
-                      {company?.plan === "pro" ? "Unlimited client capacity & real-time analytics" : "5 client capacity cap"}
+                      {company?.plan === "pro"
+                        ? "Unlimited client capacity & real-time analytics"
+                        : `${FREE_TIER_CLIENT_LIMIT} client capacity cap`}
                     </p>
                   </div>
 

@@ -5,6 +5,7 @@ import { EnrichedClient } from "@/components/coach/ClientListTable";
 import { Company } from "@/types/database";
 import { RealtimeActivityFeed } from "@/components/coach/RealtimeActivityFeed";
 import { CheckCircle2, AlertCircle, Sparkles, ChevronRight, X, ArrowRight, ShieldCheck, Dumbbell, Users } from "lucide-react";
+import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 
 interface CoachAnalyticsDashboardProps {
   companyId: string;
@@ -246,7 +247,7 @@ export function CoachAnalyticsDashboard({
               {activeCount}
             </div>
             <span className="text-3xs font-mono text-zinc-500">
-              {company?.plan === "pro" ? "Unlimited" : "Max 5"}
+              {company?.plan === "pro" ? "Unlimited" : `Max ${FREE_TIER_CLIENT_LIMIT}`}
             </span>
           </div>
           <p className="text-3xs font-normal text-zinc-400">
