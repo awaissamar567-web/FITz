@@ -28,7 +28,7 @@ import {
   MessageSquare,
   RefreshCw,
 } from "lucide-react";
-import { Company, ClientStatus } from "@/types/database";
+import { Checkin, Company, ClientStatus } from "@/types/database";
 import { ClientListTable, EnrichedClient } from "@/components/coach/ClientListTable";
 import { RealtimeActivityFeed } from "@/components/coach/RealtimeActivityFeed";
 import { ClientProfileModal } from "@/components/coach/ClientProfileModal";
@@ -45,11 +45,20 @@ interface CoachDashboardProps {
   company: Company | null;
   initialClients: EnrichedClient[];
   initialFeed?: any[];
+  initialCheckins?: Checkin[];
+  analyticsAsOf: string;
 }
 
 type CoachNavTab = "dashboard" | "clients" | "programs" | "feed" | "retention" | "settings";
 
-export function CoachDashboard({ companyId, company: initialCompany, initialClients, initialFeed = [] }: CoachDashboardProps) {
+export function CoachDashboard({
+  companyId,
+  company: initialCompany,
+  initialClients,
+  initialFeed = [],
+  initialCheckins = [],
+  analyticsAsOf,
+}: CoachDashboardProps) {
   const [clients] = useState<EnrichedClient[]>(initialClients);
   const [company, setCompany] = useState<Company | null>(initialCompany);
   const [activeTab, setActiveTab] = useState<CoachNavTab>("dashboard");
@@ -385,6 +394,8 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
             companyId={companyId}
             company={company}
             clients={clients}
+            checkins={initialCheckins}
+            analyticsAsOf={analyticsAsOf}
             onNavigateToTab={(tab) => setActiveTab(tab)}
             onSelectClient={(clientId) => setActiveProfileClientId(clientId)}
           />

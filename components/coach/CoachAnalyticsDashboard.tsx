@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import { EnrichedClient } from "@/components/coach/ClientListTable";
-import { Company } from "@/types/database";
+import { Checkin, Company } from "@/types/database";
 import { RealtimeActivityFeed } from "@/components/coach/RealtimeActivityFeed";
+import { LineTrendChart, LineTrendPoint } from "@/components/coach/LineTrendChart";
 import { CheckCircle2, AlertCircle, Sparkles, ChevronRight, X, ArrowRight, ShieldCheck, Dumbbell, Users } from "lucide-react";
 import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 
@@ -11,16 +12,73 @@ interface CoachAnalyticsDashboardProps {
   companyId: string;
   company: Company | null;
   clients: EnrichedClient[];
+  checkins: Checkin[];
+  analyticsAsOf: string;
   onNavigateToTab: (tab: "clients" | "programs" | "feed" | "retention" | "settings") => void;
   onSelectClient: (clientId: string) => void;
 }
 
 type TimeRangeFilter = "7d" | "14d" | "30d" | "all";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+interface AnalyticsBucket {
+  start: number;
+  end: number;
+  label: string;
+}
+
+function startOfUtcDay(value: string | number): number {
+  const date = new Date(value);
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
+function formatBucketLabel(timestamp: number, range: TimeRangeFilter): string {
+  const date = new Date(timestamp);
+  if (range === "7d") return new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" }).format(date);
+  if (range === "all") return new Intl.DateTimeFormat("en", { month: "short", year: "2-digit", timeZone: "UTC" }).format(date);
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+}
+
+function buildAnalyticsBuckets(
+  range: TimeRangeFilter,
+  asOf: string,
+  earliestTimestamp: number
+): AnalyticsBucket[] {
+  const endOfToday = startOfUtcDay(asOf) + DAY_MS;
+  const fixedConfig = {
+    "7d": { count: 7, daysPerBucket: 1 },
+    "14d": { count: 7, daysPerBucket: 2 },
+    "30d": { count: 6, daysPerBucket: 5 },
+  } as const;
+
+  let count = 6;
+  let bucketMs: number;
+  if (range === "all") {
+    const observedSpan = Math.max(DAY_MS, endOfToday - earliestTimestamp);
+    bucketMs = Math.max(DAY_MS, Math.ceil(observedSpan / count / DAY_MS) * DAY_MS);
+  } else {
+    count = fixedConfig[range].count;
+    bucketMs = fixedConfig[range].daysPerBucket * DAY_MS;
+  }
+
+  const rangeStart = range === "all"
+    ? Math.min(earliestTimestamp, endOfToday - bucketMs * count)
+    : endOfToday - bucketMs * count;
+
+  return Array.from({ length: count }, (_, index) => {
+    const start = rangeStart + index * bucketMs;
+    const end = index === count - 1 ? endOfToday : start + bucketMs;
+    return { start, end, label: formatBucketLabel(start, range) };
+  });
+}
+
 export function CoachAnalyticsDashboard({
   companyId,
   company,
   clients,
+  checkins,
+  analyticsAsOf,
   onNavigateToTab,
   onSelectClient,
 }: CoachAnalyticsDashboardProps) {
@@ -43,54 +101,50 @@ export function CoachAnalyticsDashboard({
   const intakePercentage = clients.length > 0 ? Math.round((intakeCount / clients.length) * 100) : 0;
   const planPercentage = clients.length > 0 ? Math.round((planCount / clients.length) * 100) : 0;
 
-  // Dynamically calculate on-time check-in completion rate from actual client records
   const eligibleClients = clients.filter((c) => c.status === "active" || c.status === "at_risk");
-  const onTimeClients = eligibleClients.filter(
-    (c) =>
-      c.intake_completed &&
-      c.daysSinceLastCheckin != null &&
-      c.daysSinceLastCheckin <= (company?.at_risk_threshold_days || 7)
+  const earliestTimestamp = Math.min(
+    startOfUtcDay(analyticsAsOf),
+    ...eligibleClients.map((client) => startOfUtcDay(client.joined_at)),
+    ...checkins.map((checkin) => startOfUtcDay(checkin.date))
   );
-  const completionRate =
-    eligibleClients.length > 0
-      ? Math.round((onTimeClients.length / eligibleClients.length) * 100)
-      : 100;
+  const analyticsBuckets = buildAnalyticsBuckets(timeRange, analyticsAsOf, earliestTimestamp);
+  const eligibleIds = new Set(eligibleClients.map((client) => client.id));
 
-  // Realistic adherence dataset scaled to the coach's active client count
-  const adherenceDatasets: Record<TimeRangeFilter, { day: string; count: number; rate: string; height: string }[]> = {
-    "7d": [
-      { day: "Mon", count: 1, rate: "100%", height: "80%" },
-      { day: "Tue", count: 0, rate: "0%", height: "15%" },
-      { day: "Wed", count: 1, rate: "100%", height: "80%" },
-      { day: "Thu", count: 1, rate: "100%", height: "80%" },
-      { day: "Fri", count: 0, rate: "0%", height: "15%" },
-      { day: "Sat", count: 1, rate: "100%", height: "80%" },
-      { day: "Sun", count: 0, rate: "0%", height: "15%" },
-    ],
-    "14d": [
-      { day: "W1-M", count: 1, rate: "100%", height: "80%" },
-      { day: "W1-W", count: 1, rate: "100%", height: "80%" },
-      { day: "W1-F", count: 1, rate: "100%", height: "80%" },
-      { day: "W1-S", count: 0, rate: "0%", height: "15%" },
-      { day: "W2-M", count: 1, rate: "100%", height: "80%" },
-      { day: "W2-W", count: 1, rate: "100%", height: "80%" },
-      { day: "W2-F", count: 1, rate: "100%", height: "80%" },
-    ],
-    "30d": [
-      { day: "Week 1", count: 3, rate: "75%", height: "75%" },
-      { day: "Week 2", count: 4, rate: "100%", height: "100%" },
-      { day: "Week 3", count: 3, rate: "75%", height: "75%" },
-      { day: "Week 4", count: 4, rate: "100%", height: "100%" },
-    ],
-    "all": [
-      { day: "Month 1", count: 12, rate: "80%", height: "70%" },
-      { day: "Month 2", count: 15, rate: "88%", height: "85%" },
-      { day: "Month 3", count: 18, rate: "92%", height: "95%" },
-      { day: "Month 4", count: 16, rate: "88%", height: "88%" },
-    ],
-  };
+  const adherenceTrend: LineTrendPoint[] = analyticsBuckets.map((bucket) => {
+    const rosterAtBucketEnd = eligibleClients.filter((client) => startOfUtcDay(client.joined_at) < bucket.end);
+    const rosterIds = new Set(rosterAtBucketEnd.map((client) => client.id));
+    const checkedInIds = new Set(
+      checkins
+        .filter((checkin) => {
+          const timestamp = startOfUtcDay(checkin.date);
+          return timestamp >= bucket.start && timestamp < bucket.end && rosterIds.has(checkin.client_id);
+        })
+        .map((checkin) => checkin.client_id)
+    );
+    const value = rosterAtBucketEnd.length > 0
+      ? Math.round((checkedInIds.size / rosterAtBucketEnd.length) * 100)
+      : 0;
+    return {
+      label: bucket.label,
+      value,
+      detail: `${bucket.label}: ${checkedInIds.size} of ${rosterAtBucketEnd.length} active clients checked in (${value}%).`,
+    };
+  });
 
-  const currentAdherence = adherenceDatasets[timeRange];
+  const rosterTrend: LineTrendPoint[] = analyticsBuckets.map((bucket) => {
+    const value = eligibleClients.filter((client) => startOfUtcDay(client.joined_at) < bucket.end).length;
+    return {
+      label: bucket.label,
+      value,
+      detail: `${bucket.label}: ${value} active ${value === 1 ? "client" : "clients"} in the roster.`,
+    };
+  });
+  const rosterGrowth = (rosterTrend.at(-1)?.value || 0) - (rosterTrend[0]?.value || 0);
+
+  const checkinsInRange = checkins.filter((checkin) => {
+    const timestamp = startOfUtcDay(checkin.date);
+    return timestamp >= analyticsBuckets[0].start && timestamp < analyticsBuckets.at(-1)!.end && eligibleIds.has(checkin.client_id);
+  }).length;
 
   const timeRangeLabels: Record<TimeRangeFilter, string> = {
     "7d": "Last 7 Days",
@@ -239,7 +293,7 @@ export function CoachAnalyticsDashboard({
               Total Roster
             </span>
             <span className="text-3xs font-mono text-emerald-400 font-medium">
-              +12% {timeRange === "all" ? "Total" : timeRange}
+              {rosterGrowth > 0 ? "+" : ""}{rosterGrowth} {timeRange === "all" ? "total" : timeRange}
             </span>
           </div>
           <div className="flex items-baseline justify-between">
@@ -333,124 +387,25 @@ export function CoachAnalyticsDashboard({
       {/* -----------------------------------------------------------------------
           3. VISUAL ANALYTICS & CHARTS GRID
           ----------------------------------------------------------------------- */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Weekly / Period Check-in Adherence Chart (8 cols) */}
-        <div className="lg:col-span-8 p-5 sm:p-6 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-xl shadow-black/40 space-y-5">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-            <div>
-              <h3 className="text-base sm:text-lg font-display font-semibold text-white tracking-tight">
-                Check-In Adherence & Volume ({timeRangeLabels[timeRange]})
-              </h3>
-            </div>
-            <div className="flex items-center gap-3 text-3xs font-mono">
-              <span className="text-zinc-400">Volume</span>
-              <span className="text-emerald-400">&gt;85% Goal</span>
-            </div>
-          </div>
-
-          {/* Frosted Bar Chart */}
-          <div className="h-44 flex items-end justify-between gap-2 pt-4 px-2">
-            {currentAdherence.map((item, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
-                <span className="text-3xs font-mono text-zinc-500 group-hover:text-white transition-colors opacity-0 group-hover:opacity-100">
-                  {item.count} logs ({item.rate})
-                </span>
-                <div className="w-full max-w-[48px] bg-white/[0.03] rounded-xl overflow-hidden h-32 flex items-end p-1 border border-white/[0.04] group-hover:border-[#1754d8]/40 transition-colors">
-                  <div
-                    className="w-full rounded-lg bg-gradient-to-t from-[#1754d8] to-[#3b82f6] group-hover:from-[#1754d8] group-hover:to-emerald-400 transition-all duration-300 shadow-md shadow-[#1754d8]/20"
-                    style={{ height: item.height }}
-                  />
-                </div>
-                <span className="text-3xs font-medium text-zinc-400 group-hover:text-white transition-colors">
-                  {item.day}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-between text-xs">
-            <div className="text-zinc-400 text-3xs">
-              <span>On-Time Check-In Completion Rate ({timeRangeLabels[timeRange]}): </span>
-              <strong className="text-white font-mono">{completionRate}%</strong>
-            </div>
-            <span
-              className={`text-3xs font-mono px-2 py-0.5 rounded-md border font-medium ${
-                completionRate >= 80
-                  ? "text-emerald-400 bg-emerald-950/80 border-emerald-800/60"
-                  : completionRate >= 60
-                  ? "text-sky-400 bg-sky-950/80 border-sky-800/60"
-                  : "text-amber-400 bg-amber-950/80 border-amber-800/60"
-              }`}
-            >
-              {completionRate >= 80 ? "High Adherence" : completionRate >= 60 ? "Moderate Adherence" : "Action Needed"}
-            </span>
-          </div>
-        </div>
-
-        {/* Right Column: Intake & Retention Funnel (4 cols) */}
-        <div className="lg:col-span-4 p-5 sm:p-6 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-xl shadow-black/40 space-y-4">
-          <div className="border-b border-white/[0.06] pb-3">
-            <h3 className="text-base sm:text-lg font-display font-semibold text-white tracking-tight">
-              Onboarding & Plan Pipeline
-            </h3>
-          </div>
-
-          <div className="space-y-3.5 text-xs">
-            {/* Step 1 */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-3xs font-medium">
-                <span className="text-zinc-300">1. Enrolled Members</span>
-                <span className="text-white font-mono">{clients.length}</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-white/[0.04] overflow-hidden">
-                <div className="h-full bg-white/40 rounded-full" style={{ width: "100%" }} />
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-3xs font-medium">
-                <span className="text-emerald-300">2. Intake Questionnaire Complete</span>
-                <span className="text-emerald-400 font-mono">{intakeCount} ({intakePercentage}%)</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-white/[0.04] overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${intakePercentage}%` }} />
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-3xs font-medium">
-                <span className="text-[#1754d8]">3. Workout Split Assigned</span>
-                <span className="text-blue-400 font-mono">{planCount} ({planPercentage}%)</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-white/[0.04] overflow-hidden">
-                <div className="h-full bg-[#1754d8] rounded-full" style={{ width: `${planPercentage}%` }} />
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-3xs font-medium">
-                <span className="text-purple-300">4. Regular Active Logging</span>
-                <span className="text-purple-400 font-mono">{activeClients.length} ({clients.length > 0 ? Math.round((activeClients.length / clients.length) * 100) : 0}%)</span>
-              </div>
-              <div className="w-full h-2 rounded-full bg-white/[0.04] overflow-hidden">
-                <div
-                  className="h-full bg-purple-500 rounded-full"
-                  style={{ width: `${clients.length > 0 ? (activeClients.length / clients.length) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={() => onNavigateToTab("programs")}
-            className="w-full py-2.5 px-3 rounded-xl bg-[#1754d8]/20 hover:bg-[#1754d8] text-[#1754d8] hover:text-white font-medium text-xs border border-[#1754d8]/30 transition-all flex items-center justify-center active:scale-[0.98] mt-2"
-          >
-            <span>Assign Next Workout Split</span>
-          </button>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <LineTrendChart
+          title={`Check-In Adherence · ${timeRangeLabels[timeRange]}`}
+          description={`${checkinsInRange} check-ins recorded. Unique active clients per period, measured against the roster available then.`}
+          points={adherenceTrend}
+          color="emerald"
+          valueSuffix="%"
+          target={85}
+          targetLabel="85% coaching target"
+          maxValue={100}
+          emptyLabel="No client check-ins in this range yet."
+        />
+        <LineTrendChart
+          title={`Active Roster Growth · ${timeRangeLabels[timeRange]}`}
+          description="Cumulative active and at-risk clients, based on their real join dates. Cancelled members are excluded."
+          points={rosterTrend}
+          color="blue"
+          emptyLabel="No active clients joined in this range yet."
+        />
       </div>
 
       {/* -----------------------------------------------------------------------

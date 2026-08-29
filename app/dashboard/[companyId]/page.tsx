@@ -87,6 +87,8 @@ export default async function CoachDashboardPage({ params }: DashboardPageProps)
       company={company}
       initialClients={enrichedClients}
       initialFeed={initialFeed}
+      initialCheckins={tenantCheckins}
+      analyticsAsOf={new Date().toISOString()}
     />
   );
 }
