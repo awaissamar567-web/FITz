@@ -150,17 +150,31 @@ export async function POST(req: NextRequest) {
 
     // Extract relevant data fields
     const data = payload.data || payload;
-    const whopCompanyId = data.company_id || data.business_id || data.account_id;
+    const whopCompanyId =
+      payload.company_id ||
+      data.company_id ||
+      data.company?.id ||
+      data.business_id ||
+      data.account_id;
     const whopUserId = data.user_id || data.member_id || data.user?.id;
-    const whopExperienceId = data.experience_id || data.product_id || "exp_default";
+    const whopExperienceId =
+      data.experience_id ||
+      data.metadata?.experience_id ||
+      "exp_default";
+
+    const whopPlanId = data.plan_id || data.plan?.id;
+    const whopProductId = data.product_id || data.product?.id;
 
     const isFitzProSubscription =
       data.is_app_subscription === true ||
-      data.product_id === "fitz_pro" ||
-      data.plan_id === "plan_fitz_pro" ||
+      whopProductId === "fitz_pro" ||
+      whopPlanId === "plan_fitz_pro" ||
       data.package_id === "fitz_pro" ||
-      (Boolean(process.env.WHOP_PRO_PLAN_ID) && (data.plan_id === process.env.WHOP_PRO_PLAN_ID || data.product_id === process.env.WHOP_PRO_PLAN_ID)) ||
-      (Boolean(process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID) && data.product_id === process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID);
+      (Boolean(process.env.WHOP_PRO_PLAN_ID) &&
+        (whopPlanId === process.env.WHOP_PRO_PLAN_ID ||
+          whopProductId === process.env.WHOP_PRO_PLAN_ID)) ||
+      (Boolean(process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID) &&
+        whopProductId === process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID);
 
     if (!whopCompanyId) {
       // Record event as received and acknowledge

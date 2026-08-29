@@ -1,8 +1,9 @@
 import React from "react";
 import { requireClientAccess } from "@/lib/whop-auth";
-import { getCompanyById } from "@/lib/services/companies";
-import { getClientByExperienceAndUser } from "@/lib/services/clients";
+import { getCompanyById, getOrCreateCompany } from "@/lib/services/companies";
+import { createOrReactivateClient, getClientByExperienceAndUser } from "@/lib/services/clients";
 import { getCurrentPlan } from "@/lib/services/plans";
+import { whopsdk } from "@/lib/whop-sdk";
 import { ClientPortal } from "@/components/client/ClientPortal";
 import { AccessDenied } from "@/components/AccessDenied";
 
@@ -39,7 +40,26 @@ export default async function ClientExperiencePage({
     );
   }
 
-  const client = await getClientByExperienceAndUser(experienceId, authContext.userId);
+  let client = await getClientByExperienceAndUser(experienceId, authContext.userId);
+
+  // Membership webhooks identify the product and company, but do not include
+  // the concrete experience ID. Resolve the verified experience on first load
+  // so new members and authorized previews are provisioned into the right tenant.
+  if (!client) {
+    try {
+      const experience = await whopsdk.experiences.retrieve({ id: experienceId });
+      const tenant = await getOrCreateCompany(experience.company.id);
+      if (tenant) {
+        client = await createOrReactivateClient(
+          tenant.id,
+          authContext.userId,
+          experienceId
+        );
+      }
+    } catch (error) {
+      console.error(`[Experience] Failed to provision ${experienceId}:`, error);
+    }
+  }
 
   if (!client) {
     return (
