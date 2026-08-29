@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireClientAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getClientByWhopUserId } from "@/lib/services/clients";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
@@ -78,7 +79,6 @@ export async function POST(req: NextRequest) {
       photoUrl: mockStorageUrl,
     }, { status: 200 });
   } catch (error) {
-    console.error("[Photo Upload API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Photo Upload API]");
   }
 }

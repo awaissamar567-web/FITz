@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireClientAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getClientByWhopUserId, createOrReactivateClient } from "@/lib/services/clients";
 import { createCheckin, listCheckins } from "@/lib/services/checkins";
 import { getOrCreateCompany } from "@/lib/services/companies";
@@ -70,8 +71,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, checkin }, { status: 201 });
   } catch (error) {
-    console.error("[Checkin POST API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Checkin POST API]");
   }
 }
 
@@ -112,7 +112,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ checkins }, { status: 200 });
   } catch (error) {
-    console.error("[Checkin GET API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Checkin GET API]");
   }
 }

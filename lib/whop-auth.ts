@@ -10,6 +10,16 @@ export interface AuthContext {
   hasAccess: boolean;
 }
 
+export class WhopAuthError extends Error {
+  constructor(
+    message: string,
+    public readonly status: 401 | 403
+  ) {
+    super(message);
+    this.name = "WhopAuthError";
+  }
+}
+
 type AccessResult = {
   has_access: boolean;
   access_level: "admin" | "customer" | "no_access";
@@ -63,7 +73,7 @@ async function requestIdentity(resourceId: string, role: "coach" | "client", all
     try {
       return { userId: await verifyWhopUserToken(token), testAccess: null as string | null };
     } catch {
-      throw new Error("Unauthorized: Invalid or expired Whop user token");
+      throw new WhopAuthError("Unauthorized: Invalid or expired Whop user token", 401);
     }
   }
 
@@ -79,7 +89,7 @@ async function requestIdentity(resourceId: string, role: "coach" | "client", all
     }
   }
 
-  throw new Error("Unauthorized: Missing Whop user token");
+  throw new WhopAuthError("Unauthorized: Missing Whop user token", 401);
 }
 
 export async function evaluateWhopAccess(
@@ -113,13 +123,13 @@ export async function evaluateWhopAccess(
 export async function requireCoachAccess(companyId: string, allowDemo = false): Promise<AuthContext> {
   const identity = await requestIdentity(companyId, "coach", allowDemo);
   const access = await evaluateWhopAccess(identity.userId, companyId, identity.testAccess);
-  if (access.access_level !== "admin") throw new Error("Forbidden: Admin access required");
+  if (access.access_level !== "admin") throw new WhopAuthError("Forbidden: Admin access required", 403);
   return { userId: identity.userId, companyId, accessLevel: "admin", hasAccess: true };
 }
 
 export async function requireClientAccess(experienceId: string, allowDemo = false): Promise<AuthContext> {
   const identity = await requestIdentity(experienceId, "client", allowDemo);
   const access = await evaluateWhopAccess(identity.userId, experienceId, identity.testAccess);
-  if (!access.has_access) throw new Error("Forbidden: Active membership required");
+  if (!access.has_access) throw new WhopAuthError("Forbidden: Active membership required", 403);
   return { userId: identity.userId, experienceId, accessLevel: access.access_level, hasAccess: true };
 }

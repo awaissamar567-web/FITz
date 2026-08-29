@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCoachAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { listCheckins } from "@/lib/services/checkins";
 import { getClient } from "@/lib/services/clients";
@@ -42,7 +43,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ feed: enrichedFeed }, { status: 200 });
   } catch (error) {
-    console.error("[Coach Feed API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Coach Feed API]");
   }
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCoachAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { getClient } from "@/lib/services/clients";
 import { listCheckins } from "@/lib/services/checkins";
@@ -41,7 +42,6 @@ export async function GET(req: NextRequest, { params }: ParamsProps) {
 
     return NextResponse.json({ client, checkins, plan }, { status: 200 });
   } catch (error) {
-    console.error("[Coach Single Client API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Coach Single Client API]");
   }
 }

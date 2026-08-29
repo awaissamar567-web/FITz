@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireClientAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getClientByWhopUserId, updateClientIntake, createOrReactivateClient } from "@/lib/services/clients";
 import { getOrCreateCompany } from "@/lib/services/companies";
 
@@ -46,7 +47,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, client: updatedClient }, { status: 200 });
   } catch (error) {
-    console.error("[Intake API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Intake API]");
   }
 }

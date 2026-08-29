@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCoachAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getOrCreateCompany, updateCompanySettings } from "@/lib/services/companies";
 
 export async function POST(req: NextRequest) {
@@ -29,8 +30,7 @@ export async function POST(req: NextRequest) {
     const updatedCompany = await updateCompanySettings(companyId, updates);
 
     return NextResponse.json({ success: true, company: updatedCompany }, { status: 200 });
-  } catch (error: any) {
-    console.error("[Coach Settings API] Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to update settings" }, { status: 500 });
+  } catch (error) {
+    return apiErrorResponse(error, "[Coach Settings API]");
   }
 }

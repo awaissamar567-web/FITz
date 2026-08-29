@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireClientAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getClientByWhopUserId, getClient } from "@/lib/services/clients";
 import { getCurrentPlan } from "@/lib/services/plans";
 import { listCheckins } from "@/lib/services/checkins";
@@ -36,7 +37,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ plan, checkins }, { status: 200 });
   } catch (error) {
-    console.error("[Plan GET API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Plan GET API]");
   }
 }

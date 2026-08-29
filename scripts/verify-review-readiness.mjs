@@ -12,6 +12,13 @@
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
+function createMockJwt(userId) {
+  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({ sub: userId, iat: Date.now() / 1000 })).toString("base64url");
+  const signature = Buffer.from("mock_signature").toString("base64url");
+  return `${header}.${payload}.${signature}`;
+}
+
 let passedCount = 0;
 let failedCount = 0;
 
@@ -32,6 +39,7 @@ async function runReviewReadinessTests() {
 
   const testStamp = Date.now();
   const freshCompanyId = `biz_fresh_coach_${testStamp}`;
+  const freshMemberCompanyId = `biz_fresh_member_coach_${testStamp}`;
   const freshUserId = `user_fresh_client_${testStamp}`;
   const freshExpId = `exp_fresh_${testStamp}`;
 
@@ -41,15 +49,45 @@ async function runReviewReadinessTests() {
   console.log("▶ CHECK 1: Verifying Fresh Install Zero-Data Route Rendering...");
   try {
     // 1. Fresh Coach Dashboard View (0 clients, uninitialized workspace)
-    const coachRes = await fetch(`${BASE_URL}/dashboard/${freshCompanyId}?demo=true`);
+    const coachUserId = `user_coach_${testStamp}`;
+    const coachRes = await fetch(`${BASE_URL}/dashboard/${freshCompanyId}`, {
+      headers: {
+        "x-whop-user-token": createMockJwt(coachUserId),
+        "x-test-auth": JSON.stringify({
+          [freshCompanyId]: { has_access: true, access_level: "admin" },
+        }),
+      },
+    });
     const coachHtml = await coachRes.text();
     assert(
-      coachRes.status === 200 && coachHtml.includes("Coach Dashboard"),
+      coachRes.status === 200 && coachHtml.includes("Dashboard Overview"),
       "Fresh coach workspace renders cleanly with 200 OK"
     );
 
-    // 2. Fresh Client Experience View (brand new user, intake uncompleted)
-    const clientRes = await fetch(`${BASE_URL}/experiences/${freshExpId}?demo=true`);
+    // Provision the brand-new membership exactly as Whop does before first view.
+    await fetch(`${BASE_URL}/api/webhooks/whop`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-test-webhook": "true" },
+      body: JSON.stringify({
+        action: "membership.activated",
+        id: `evt_fresh_install_${testStamp}`,
+        data: {
+          company_id: freshMemberCompanyId,
+          user_id: freshUserId,
+          experience_id: freshExpId,
+        },
+      }),
+    });
+
+    // 2. Fresh Client Experience View (brand-new member, intake uncompleted)
+    const clientRes = await fetch(`${BASE_URL}/experiences/${freshExpId}`, {
+      headers: {
+        "x-whop-user-token": createMockJwt(freshUserId),
+        "x-test-auth": JSON.stringify({
+          [freshExpId]: { has_access: true, access_level: "customer" },
+        }),
+      },
+    });
     const clientHtml = await clientRes.text();
     assert(
       clientRes.status === 200 && (clientHtml.includes("Client Onboarding Intake") || clientHtml.includes("Welcome to Fitz Coaching")),

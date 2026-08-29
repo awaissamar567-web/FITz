@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCoachAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { syncCompanyAtRiskClients } from "@/lib/services/retention";
 
@@ -31,7 +32,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, companyId, ...results }, { status: 200 });
   } catch (error) {
-    console.error("[Retention Evaluation API] Error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return apiErrorResponse(error, "[Retention Evaluation API]");
   }
 }

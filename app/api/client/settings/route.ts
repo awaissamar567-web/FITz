@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireClientAccess } from "@/lib/whop-auth";
+import { apiErrorResponse } from "@/lib/api-errors";
 import { getClient, getClientByWhopUserId, updateClientSettings } from "@/lib/services/clients";
 
 export async function POST(req: NextRequest) {
@@ -28,8 +29,7 @@ export async function POST(req: NextRequest) {
     const updatedClient = await updateClientSettings(companyId, client.id, updates);
 
     return NextResponse.json({ success: true, client: updatedClient }, { status: 200 });
-  } catch (error: any) {
-    console.error("[Client Settings API] Error:", error);
-    return NextResponse.json({ error: error.message || "Failed to update client settings" }, { status: 500 });
+  } catch (error) {
+    return apiErrorResponse(error, "[Client Settings API]");
   }
 }
