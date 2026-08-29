@@ -67,7 +67,7 @@ export default function DiscoverPage() {
             </div>
             <ul className="space-y-2 text-xs text-zinc-300">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Up to 5 Active Clients
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Up to 3 Active Clients
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> 7-Day Routine Builder & Macros

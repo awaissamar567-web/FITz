@@ -190,7 +190,7 @@ if (count >= 5 && company.plan !== 'pro') {
   return { error: 'limit_reached' }; // frontend renders the upgrade button/modal
 }
 ```
-Suggested free tier: 5 active clients. Paid tier: unlimited clients + retention dashboard insights + templates (v2). Trigger the upgrade prompt at the exact moment they try to add client #6 — tied to their own growth, not a generic banner.
+Free tier: 3 active clients. Paid tier: unlimited clients + retention dashboard insights + templates (v2). Trigger the upgrade prompt at the exact moment they try to add client #4 — tied to their own growth, not a generic banner.
 
 **Sandbox testing:** create sandbox plans at `sandbox.whop.com/dashboard`, use test card `4242 4242 4242 4242` with any future expiry/CVC, and set `WHOP_BASE_URL=https://sandbox-api.whop.com` in dev/preview environments before switching to production for the real deploy.
 

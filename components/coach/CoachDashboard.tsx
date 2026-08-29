@@ -37,6 +37,7 @@ import { CoachAnalyticsDashboard } from "@/components/coach/CoachAnalyticsDashbo
 import { PaywallBanner } from "@/components/coach/PaywallBanner";
 import { PaywallModal } from "@/components/coach/PaywallModal";
 import { ToastNotification, ToastMessage } from "@/components/ui/ToastNotification";
+import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 
 interface CoachDashboardProps {
   companyId: string;
@@ -102,7 +103,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
 
   const totalInterventions = overdueClients.length + intakePendingClients.length + missingPlanClients.length;
 
-  const isFreeTierCapped = company?.plan !== "pro" && activeCount >= 5;
+  const isFreeTierCapped = company?.plan !== "pro" && activeCount >= FREE_TIER_CLIENT_LIMIT;
 
   const filteredClients = clients.filter((c) => {
     if (selectedStatus !== "all" && c.status !== selectedStatus) return false;
@@ -304,34 +305,19 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
                 <span className="text-3xs uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1754d8]/30 text-[#60a5fa] font-mono font-medium">PRO</span>
               </div>
               <p className="text-3xs text-zinc-300 font-normal">Unlimited client capacity & real-time telemetry active</p>
-              <button
-                type="button"
-                onClick={() => {
-                  if (company) setCompany({ ...company, plan: "free" });
-                  setToast({
-                    id: Date.now().toString(),
-                    type: "info",
-                    title: "Switched to Free Tier View",
-                    message: "Previewing 5-client capacity cap and upgrade alerts.",
-                  });
-                }}
-                className="text-3xs text-zinc-400 hover:text-zinc-200 underline block pt-0.5 transition-colors"
-              >
-                Switch to Free View
-              </button>
             </div>
           ) : (
             <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-800/50 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-3xs uppercase tracking-wider text-amber-400 font-medium">Free Tier</span>
-                <span className="text-3xs text-amber-300 font-mono font-medium">{activeCount}/5 Clients</span>
+                <span className="text-3xs text-amber-300 font-mono font-medium">{activeCount}/{FREE_TIER_CLIENT_LIMIT} Clients</span>
               </div>
               <div className="w-full bg-black/40 rounded-md h-1.5 overflow-hidden">
                 <div
                   className={`h-full transition-all ${
-                    activeCount >= 5 ? "bg-amber-400" : "bg-[#1754d8]"
+                    activeCount >= FREE_TIER_CLIENT_LIMIT ? "bg-amber-400" : "bg-[#1754d8]"
                   }`}
-                  style={{ width: `${Math.min(100, (activeCount / 5) * 100)}%` }}
+                  style={{ width: `${Math.min(100, (activeCount / FREE_TIER_CLIENT_LIMIT) * 100)}%` }}
                 />
               </div>
               <button
@@ -339,21 +325,6 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
                 className="w-full py-1.5 px-2 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-[0.98] text-white text-3xs font-medium transition-colors flex items-center justify-center gap-1"
               >
                 <Sparkles className="w-3 h-3" /> Upgrade to Pro
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (company) setCompany({ ...company, plan: "pro" });
-                  setToast({
-                    id: Date.now().toString(),
-                    type: "success",
-                    title: "Switched to FITz Pro View",
-                    message: "Unlimited client capacity & real-time telemetry active.",
-                  });
-                }}
-                className="text-3xs text-[#3b82f6] hover:text-[#60a5fa] text-center w-full block pt-1 font-medium transition-colors"
-              >
-                ⚡ Switch to Pro View
               </button>
             </div>
           )}
@@ -378,7 +349,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
         {isFreeTierCapped && (
           <PaywallBanner
             activeCount={activeCount}
-            limit={5}
+            limit={FREE_TIER_CLIENT_LIMIT}
             onOpenUpgrade={() => setIsPaywallOpen(true)}
           />
         )}

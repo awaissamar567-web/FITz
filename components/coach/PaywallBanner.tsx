@@ -26,7 +26,7 @@ export function PaywallBanner({ activeCount, limit, onOpenUpgrade }: PaywallBann
             </span>
           </div>
           <p className="text-2xs font-normal text-zinc-400 leading-relaxed">
-            You have enrolled 5 active clients on your free plan. Upgrade to <strong className="text-amber-300 font-medium">Fitz Pro</strong> for unlimited member capacity and automatic churn retention.
+            You have enrolled {limit} active clients on your free plan. Upgrade to <strong className="text-amber-300 font-medium">Fitz Pro</strong> for unlimited member capacity and automatic churn retention.
           </p>
         </div>
       </div>

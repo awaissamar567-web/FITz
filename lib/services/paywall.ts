@@ -1,8 +1,7 @@
 import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { Company } from "@/types/database";
 import { listClients } from "@/lib/services/clients";
-
-export const FREE_TIER_CLIENT_LIMIT = 5;
+import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 
 export interface PaywallStatus {
   isCapped: boolean;

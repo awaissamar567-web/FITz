@@ -1,9 +1,9 @@
 /**
  * Phase 6 Exit Check Test Suite: In-App Purchase Paywall Verification
- * 1. 5 active clients enroll on Free Tier without paywall
- * 2. 6th client triggers 5-client paywall barrier (402 Payment Required & isCapped)
+ * 1. 3 active clients enroll on Free Tier without paywall
+ * 2. 4th client triggers 3-client paywall barrier (402 Payment Required & isCapped)
  * 3. Whop SaaS subscription upgrade webhook flips company to 'pro'
- * 4. Pro Tier unlocks 6th client and allows unlimited plan assignments
+ * 4. Pro Tier unlocks 4th client and allows unlimited plan assignments
  * 5. Downgrade webhook flips company back to 'free'
  */
 
@@ -33,10 +33,10 @@ async function runPaywallTestSuite() {
     [coachCompanyId]: { has_access: true, access_level: "admin" },
   });
 
-  // TEST 1: Enroll 5 active clients on Free Tier
-  console.log("▶ TEST 1: Enrolling 5 active clients under free-tier coach...");
+  // TEST 1: Enroll 3 active clients on Free Tier
+  console.log("▶ TEST 1: Enrolling 3 active clients under free-tier coach...");
   try {
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 3; i++) {
       const clientUserId = `user_client_paywall_${testId}_${i}`;
       const expId = `exp_paywall_${testId}_${i}`;
       const clientToken = createMockJwt(clientUserId);
@@ -71,11 +71,11 @@ async function runPaywallTestSuite() {
     );
 
     const data1 = await res1.json();
-    if (res1.status === 200 && data1.clients?.length === 5) {
-      console.log("✅ [PASS] 5 active clients enrolled successfully on free tier");
+    if (res1.status === 200 && data1.clients?.length === 3) {
+      console.log("✅ [PASS] 3 active clients enrolled successfully on free tier");
       passed++;
     } else {
-      console.error("❌ [FAIL] Failed to enroll 5 clients:", data1);
+      console.error("❌ [FAIL] Failed to enroll 3 clients:", data1);
       failed++;
     }
   } catch (err) {
@@ -83,12 +83,12 @@ async function runPaywallTestSuite() {
     failed++;
   }
 
-  // TEST 2: Enroll 6th client and attempt plan assignment -> Triggers Paywall Barrier
-  console.log("\n▶ TEST 2: Enrolling 6th client and attempting plan assignment (Free Tier Cap)...");
+  // TEST 2: Enroll 4th client and attempt plan assignment -> Triggers Paywall Barrier
+  console.log("\n▶ TEST 2: Enrolling 4th client and attempting plan assignment (Free Tier Cap)...");
   let client6Record = null;
   try {
-    const client6UserId = `user_client_paywall_${testId}_6`;
-    const expId6 = `exp_paywall_${testId}_6`;
+    const client6UserId = `user_client_paywall_${testId}_4`;
+    const expId6 = `exp_paywall_${testId}_4`;
     const client6Token = createMockJwt(client6UserId);
     const authClient6 = JSON.stringify({
       [expId6]: { has_access: true, access_level: "customer" },
@@ -120,7 +120,7 @@ async function runPaywallTestSuite() {
     const dataRoster = await resRoster.json();
     client6Record = dataRoster.clients?.find((c) => c.whop_user_id === client6UserId);
 
-    // Attempt plan assignment for 6th client while on Free tier
+    // Attempt plan assignment for 4th client while on Free tier
     const resPlan = await fetch(`${BASE_URL}/api/coach/plans`, {
       method: "POST",
       headers: {
@@ -140,10 +140,10 @@ async function runPaywallTestSuite() {
     const dataPlan = await resPlan.json();
 
     if (resPlan.status === 402 && dataPlan.paywall_required === true && dataRoster.paywallStatus?.isCapped) {
-      console.log("✅ [PASS] 6th client strictly triggered Paywall modal/barrier (402 Payment Required)");
+      console.log("✅ [PASS] 4th client strictly triggered Paywall modal/barrier (402 Payment Required)");
       passed++;
     } else {
-      console.error("❌ [FAIL] 6th client failed to trigger paywall:", resPlan.status, dataPlan);
+      console.error("❌ [FAIL] 4th client failed to trigger paywall:", resPlan.status, dataPlan);
       failed++;
     }
   } catch (err) {
@@ -196,8 +196,8 @@ async function runPaywallTestSuite() {
     failed++;
   }
 
-  // TEST 4: Pro Tier unlocks 6th client plan assignment and beyond
-  console.log("\n▶ TEST 4: Re-attempting 6th client plan assignment on Pro Tier...");
+  // TEST 4: Pro Tier unlocks 4th client plan assignment and beyond
+  console.log("\n▶ TEST 4: Re-attempting 4th client plan assignment on Pro Tier...");
   try {
     const resPlanUnlocked = await fetch(`${BASE_URL}/api/coach/plans`, {
       method: "POST",
@@ -240,7 +240,7 @@ async function runPaywallTestSuite() {
     });
 
     if (resPlanUnlocked.status === 200 && dataPlanUnlocked.success) {
-      console.log("✅ [PASS] Pro tier unlocked 6th and 7th clients with unlimited capacity");
+      console.log("✅ [PASS] Pro tier unlocked additional clients with unlimited capacity");
       passed++;
     } else {
       console.error("❌ [FAIL] Plan assignment failed on Pro tier:", resPlanUnlocked.status, dataPlanUnlocked);

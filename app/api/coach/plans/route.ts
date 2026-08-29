@@ -4,6 +4,7 @@ import { getOrCreateCompany } from "@/lib/services/companies";
 import { getClient } from "@/lib/services/clients";
 import { savePlan, getCurrentPlan } from "@/lib/services/plans";
 import { checkPaywallStatus } from "@/lib/services/paywall";
+import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 import { ExerciseItem, MacroTargets } from "@/types/database";
 
 export async function POST(req: NextRequest) {
@@ -36,16 +37,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Client not found under this company" }, { status: 404 });
     }
 
-    // Paywall Check: 5-client active cap on Free Tier (PRD Section 4.4)
+    // Paywall Check: active-client cap on Free Tier
     const existingPlan = await getCurrentPlan(company.id, client.id);
     const paywall = await checkPaywallStatus(company);
 
-    if (company.plan === "free" && paywall.activeCount > 5 && !existingPlan) {
+    if (company.plan === "free" && paywall.activeCount > FREE_TIER_CLIENT_LIMIT && !existingPlan) {
       return NextResponse.json(
         {
-          error: "Free tier client limit reached (5/5 active clients). Upgrade to Pro for unlimited clients.",
+          error: `Free tier client limit reached (${FREE_TIER_CLIENT_LIMIT}/${FREE_TIER_CLIENT_LIMIT} active clients). Upgrade to Pro for unlimited clients.`,
           paywall_required: true,
-          limit: 5,
+          limit: FREE_TIER_CLIENT_LIMIT,
           activeCount: paywall.activeCount,
         },
         { status: 402 }

@@ -25,7 +25,7 @@ _A running log of decisions and why they were made, so a future session (human o
 - **Isolation testing happens in Phase 1 of the implementation plan, before any feature work**, not saved for a pre-launch audit. Reasoning: catching a broken foundation early is cheap; catching it after five features are built on top of it is not.
 
 ## Paywall design
-- **Free tier: 5 active clients.** Chosen as the point where a coach has genuinely used check-ins, plan assignment, and the dashboard — enough to feel the product's value before being asked to pay. Not an arbitrary number; it's the "have they seen it work" threshold.
+- **Free tier: 3 active clients.** This is the current product limit before a coach must upgrade to Pro.
 - **Usage cap over feature-gating.** A coach who's already gotten value from the app and hits a cap tied to their own growth is an easier upgrade conversation than one facing an arbitrarily locked feature before they've experienced the product.
 - **Plan status flips only from the verified webhook, never the client-side purchase result.** A dropped connection mid-purchase must never leave the UI falsely claiming upgraded access.
 
@@ -74,7 +74,7 @@ _A running log of decisions and why they were made, so a future session (human o
 - **Urgent Visual Cues & Direct Re-Engagement:** Highlighted with amber badge and direct "Message on Whop" quick action button in the coach roster.
 
 ## Implementation details (Phase 6)
-- **5-Active Client Free Tier Cap:** Enforced across the coach workspace (`active` and `at_risk` count). Exceeding 5 active clients disables additional plan assignment with a `402 Payment Required` paywall barrier.
+- **3-Active Client Free Tier Cap:** Enforced across the coach workspace (`active` and `at_risk` count). Exceeding 3 active clients disables additional plan assignment with a `402 Payment Required` paywall barrier.
 - **Whop In-App Purchase Integration:** Built `PaywallBanner` and `PaywallModal` presenting clear value proposition, Pro tier feature breakdown, and direct checkout trigger to Whop's native In-App Purchase modal.
 - **Asynchronous Webhook-Only Tier Transition:** In compliance with DECISIONS.md #30, `companies.plan` flips strictly via verified Whop SaaS subscription webhooks (`membership.activated` / `payment.succeeded` for Fitz Pro plan), never via unverified client-side state.
 
@@ -83,8 +83,6 @@ _A running log of decisions and why they were made, so a future session (human o
 - **Client Secret Zero-Exposure Guarantee:** Confirmed complete absence of `SUPABASE_SERVICE_ROLE_KEY`, `WHOP_API_KEY`, and `WHOP_CLIENT_SECRET` in all client components, browser bundles, and public variables.
 - **In-Memory & Edge Rate Limiting:** Implemented `lib/rate-limiter.ts` to protect check-in submissions (10 req/min) and photo uploads (5 req/min) against rapid automated bursts with `429 Too Many Requests` responses.
 - **100-Client Performance Validation:** Evaluated 100-client roster retrieval under Pro tier with check-in history, clocking at ~43ms (well under the 1500ms latency budget).
-
-
 
 
 

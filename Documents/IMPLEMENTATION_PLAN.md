@@ -71,7 +71,7 @@ Build in this order, per PRD 4.3–4.4 and UI.md Section 2:
 ## Phase 6 — Paywall (coach subscription to the app)
 1. Set up your own product/plan in Whop dashboard
 2. Implement `checkoutConfigurations.create` + `iframeSdk.inAppPurchase` per TRD Section 13
-3. Server-side cap enforcement (5 active clients free tier) before any new client insert
+3. Server-side cap enforcement (3 active clients free tier) before any new client insert
 4. Confirm plan status flips only from the verified webhook, never the client-side purchase result
 
 **Exit check:** simulate a dropped connection mid-purchase (close the tab right after `inAppPurchase` resolves but before any follow-up) — confirm the UI does not falsely show "Pro" until the webhook actually lands and updates the database.

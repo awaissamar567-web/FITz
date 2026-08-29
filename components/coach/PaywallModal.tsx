@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 import {
   CheckCircle2,
   X,
@@ -24,7 +25,7 @@ export function PaywallModal({
   isOpen,
   onClose,
   companyId = "biz_default_coach",
-  activeCount = 5,
+  activeCount = FREE_TIER_CLIENT_LIMIT,
   onSuccess,
 }: PaywallModalProps) {
   // Step 1: "upgrade_card" (default) | Step 2: "checkout" (Inline Embed)
@@ -227,5 +228,4 @@ export function PaywallModal({
     </div>
   );
 }
-
 
