@@ -26,6 +26,7 @@ import {
   TrendingUp,
   Dumbbell,
   MessageSquare,
+  RefreshCw,
 } from "lucide-react";
 import { Company, ClientStatus } from "@/types/database";
 import { ClientListTable, EnrichedClient } from "@/components/coach/ClientListTable";
@@ -60,6 +61,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
     initialClients.length > 0 ? initialClients[0].id : null
   );
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
   // Retention Intervention Queue State
@@ -104,6 +106,11 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
   const totalInterventions = overdueClients.length + intakePendingClients.length + missingPlanClients.length;
 
   const isFreeTierCapped = company?.plan !== "pro" && activeCount >= FREE_TIER_CLIENT_LIMIT;
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    window.location.reload();
+  };
 
   const filteredClients = clients.filter((c) => {
     if (selectedStatus !== "all" && c.status !== selectedStatus) return false;
@@ -290,6 +297,22 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
                 <span>Coach Settings</span>
               </div>
             </button>
+
+            <div className="mt-2 border-t border-white/[0.06] pt-2">
+              <button
+                type="button"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                aria-label="Refresh dashboard data"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-normal text-zinc-400 transition-[color,background-color,opacity,transform] duration-150 hover:bg-white/[0.03] hover:text-zinc-200 active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 text-zinc-400 ${isRefreshing ? "animate-spin" : ""}`}
+                  strokeWidth={1.5}
+                />
+                <span>{isRefreshing ? "Refreshing…" : "Refresh data"}</span>
+              </button>
+            </div>
           </nav>
         </div>
 
