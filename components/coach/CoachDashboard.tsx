@@ -572,7 +572,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
                             Snooze 7d
                           </button>
                           <a
-                            href={`https://whop.com/messages/?user=${c.whop_user_id}`}
+                            href={`https://whop.com/messages/?to_user_id=${c.whop_user_id}`}
                             target="_blank"
                             rel="noreferrer"
                             className="py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 active:scale-[0.98] text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-md shadow-amber-600/20"
@@ -614,7 +614,7 @@ export function CoachDashboard({ companyId, company: initialCompany, initialClie
 
                       <div className="flex items-center gap-2 shrink-0">
                         <a
-                          href={`https://whop.com/messages/?user=${c.whop_user_id}`}
+                          href={`https://whop.com/messages/?to_user_id=${c.whop_user_id}`}
                           target="_blank"
                           rel="noreferrer"
                           className="py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-500 active:scale-[0.98] text-white text-xs font-medium transition-colors flex items-center gap-1.5 shadow-md shadow-sky-600/20"

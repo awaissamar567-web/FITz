@@ -128,7 +128,7 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
               <span>Client is at risk of churning due to missed check-ins (over 7 days).</span>
             </div>
             <a
-              href={`https://whop.com/messages/?user=${client?.whop_user_id}`}
+              href={`https://whop.com/messages/?to_user_id=${client?.whop_user_id}`}
               target="_blank"
               rel="noreferrer"
               className="py-1.5 px-3 rounded-lg bg-amber-600 hover:bg-amber-500 active:scale-[0.98] text-white font-medium text-xs transition-colors shrink-0 flex items-center justify-center gap-1.5"
@@ -159,7 +159,7 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
           </button>
 
           <a
-            href={`https://whop.com/messages/?user=${client?.whop_user_id}`}
+            href={`https://whop.com/messages/?to_user_id=${client?.whop_user_id}`}
             target="_blank"
             rel="noreferrer"
             className="py-2 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:scale-[0.98] text-zinc-300 hover:text-white font-medium text-xs border border-white/[0.08] transition-colors flex items-center gap-1.5"
