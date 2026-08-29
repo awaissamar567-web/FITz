@@ -661,7 +661,7 @@ export function WorkoutProgramsView({
                       >
                         {day}
                       </span>
-                      <span className="text-3xs text-zinc-400 font-mono bg-white/[0.04] px-2 py-0.5 rounded-md border border-white/[0.04]">
+                      <span className="text-3xs text-zinc-400 font-mono bg-white/[0.04] px-2 py-0.5 rounded-md">
                         {dayData.exercises.length} {dayData.exercises.length === 1 ? "exercise" : "exercises"}
                       </span>
                     </div>

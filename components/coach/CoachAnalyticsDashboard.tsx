@@ -5,7 +5,7 @@ import { EnrichedClient } from "@/components/coach/ClientListTable";
 import { Checkin, Company } from "@/types/database";
 import { RealtimeActivityFeed } from "@/components/coach/RealtimeActivityFeed";
 import { LineTrendChart, LineTrendPoint } from "@/components/coach/LineTrendChart";
-import { CheckCircle2, AlertCircle, Sparkles, ChevronRight, X, ArrowRight, ShieldCheck, Dumbbell, Users } from "lucide-react";
+import { CheckCircle2, AlertCircle, ChevronRight, X, ArrowRight, ShieldCheck, Dumbbell, Users } from "lucide-react";
 import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 
 interface CoachAnalyticsDashboardProps {
@@ -200,22 +200,9 @@ export function CoachAnalyticsDashboard({
       {showChecklist && (
         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1754d8]/10 via-[#0c0c0e]/90 to-[#0c0c0e]/90 border border-[#1754d8]/30 shadow-xl shadow-black/40 space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-[#1754d8]/20 text-[#3b82f6] border border-[#1754d8]/30">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-semibold text-white tracking-tight flex items-center gap-2">
-                  Weekly Operating Checklist
-                  <span className="text-3xs font-mono px-2 py-0.5 rounded-full bg-[#1754d8]/25 text-[#3b82f6] border border-[#1754d8]/40">
-                    3 of 5 completed
-                  </span>
-                </h3>
-                <p className="text-3xs text-zinc-400 mt-0.5">
-                  Keep your Whop coaching business on track with zero manual guesswork.
-                </p>
-              </div>
-            </div>
+            <h3 className="text-xs sm:text-sm font-semibold text-white tracking-tight">
+              Weekly Operating Checklist
+            </h3>
 
             <button
               onClick={() => setShowChecklist(false)}
@@ -229,7 +216,7 @@ export function CoachAnalyticsDashboard({
           {/* Checklist Items */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
             {/* Step 1: Cadence Config */}
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-start gap-2.5">
+            <div className="p-3 rounded-xl bg-white/[0.02] flex items-start gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div className="space-y-0.5 min-w-0">
                 <span className="text-3xs font-medium text-white block truncate">Coaching Cadence</span>
@@ -238,7 +225,7 @@ export function CoachAnalyticsDashboard({
             </div>
 
             {/* Step 2: Templates Ready */}
-            <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-start gap-2.5">
+            <div className="p-3 rounded-xl bg-white/[0.02] flex items-start gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div className="space-y-0.5 min-w-0">
                 <span className="text-3xs font-medium text-white block truncate">Workout Split Templates</span>
@@ -249,7 +236,7 @@ export function CoachAnalyticsDashboard({
             {/* Step 3: Pending Intake */}
             <div
               onClick={() => onNavigateToTab("clients")}
-              className="p-3 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-start justify-between gap-2 cursor-pointer hover:bg-amber-950/30 transition-all group"
+              className="p-3 rounded-xl bg-amber-950/20 flex items-start justify-between gap-2 cursor-pointer hover:bg-amber-950/30 transition-colors group"
             >
               <div className="flex items-start gap-2.5 min-w-0">
                 <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -264,7 +251,7 @@ export function CoachAnalyticsDashboard({
             {/* Step 4: Churn Intervention */}
             <div
               onClick={() => onNavigateToTab("retention")}
-              className="p-3 rounded-xl bg-red-950/20 border border-red-500/30 flex items-start justify-between gap-2 cursor-pointer hover:bg-red-950/30 transition-all group"
+              className="p-3 rounded-xl bg-red-950/20 flex items-start justify-between gap-2 cursor-pointer hover:bg-red-950/30 transition-colors group"
             >
               <div className="flex items-start gap-2.5 min-w-0">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -286,7 +273,7 @@ export function CoachAnalyticsDashboard({
         {/* Card 1: Total Active Roster */}
         <div
           onClick={() => onNavigateToTab("clients")}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:border-[#1754d8]/50 hover:bg-[#1754d8]/5 transition-all group"
+          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:bg-[#1754d8]/5 transition-colors group"
         >
           <div className="flex items-center justify-between">
             <span className="text-3xs uppercase tracking-wider font-medium text-zinc-400">
@@ -297,7 +284,7 @@ export function CoachAnalyticsDashboard({
             </span>
           </div>
           <div className="flex items-baseline justify-between">
-            <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight font-mono">
+            <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight">
               {activeCount}
             </div>
             <span className="text-3xs font-mono text-zinc-500">
@@ -312,7 +299,7 @@ export function CoachAnalyticsDashboard({
         {/* Card 2: Intake Onboarding Completed */}
         <div
           onClick={() => onNavigateToTab("clients")}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-950/10 transition-all group"
+          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:bg-emerald-950/10 transition-colors group"
         >
           <div className="flex items-center justify-between">
             <span className="text-3xs uppercase tracking-wider font-medium text-zinc-400">
@@ -323,7 +310,7 @@ export function CoachAnalyticsDashboard({
             </span>
           </div>
           <div className="flex items-baseline justify-between">
-            <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight font-mono">
+            <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight">
               {intakeCount}
               <span className="text-xs text-zinc-500 font-normal"> / {clients.length}</span>
             </div>
@@ -336,7 +323,7 @@ export function CoachAnalyticsDashboard({
         {/* Card 3: Active Plan Assigned */}
         <div
           onClick={() => onNavigateToTab("programs")}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:border-[#1754d8]/50 hover:bg-[#1754d8]/5 transition-all group"
+          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:bg-[#1754d8]/5 transition-colors group"
         >
           <div className="flex items-center justify-between">
             <span className="text-3xs uppercase tracking-wider font-medium text-zinc-400">
@@ -347,7 +334,7 @@ export function CoachAnalyticsDashboard({
             </span>
           </div>
           <div className="flex items-baseline justify-between">
-            <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight font-mono">
+            <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight">
               {planCount}
               <span className="text-xs text-zinc-500 font-normal"> / {clients.length}</span>
             </div>
@@ -360,7 +347,7 @@ export function CoachAnalyticsDashboard({
         {/* Card 4: At-Risk Churn Alert */}
         <div
           onClick={() => onNavigateToTab("retention")}
-          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:border-amber-500/50 hover:bg-amber-950/10 transition-all group"
+          className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3 cursor-pointer hover:bg-amber-950/10 transition-colors group"
         >
           <div className="flex items-center justify-between">
             <span className="text-3xs uppercase tracking-wider font-medium text-amber-400">
@@ -371,7 +358,7 @@ export function CoachAnalyticsDashboard({
             </span>
           </div>
           <div className="flex items-baseline justify-between">
-            <div className="text-2xl sm:text-3xl font-display font-semibold text-amber-300 tracking-tight font-mono">
+            <div className="text-2xl sm:text-3xl font-display font-semibold text-amber-300 tracking-tight">
               {atRiskCount}
             </div>
             <span className="text-3xs font-mono text-amber-400/90 font-medium">
@@ -455,10 +442,10 @@ export function CoachAnalyticsDashboard({
                     <span
                       className={`text-3xs font-medium px-2 py-0.5 rounded-md capitalize ${
                         isAtRisk
-                          ? "bg-amber-950/80 text-amber-300 border border-amber-800/60"
+                          ? "bg-amber-950/80 text-amber-300"
                           : client.status === "active"
-                          ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
-                          : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                          ? "bg-emerald-950/80 text-emerald-300"
+                          : "bg-zinc-800 text-zinc-400"
                       }`}
                     >
                       {isAtRisk ? "⚠️ At Risk" : client.status}

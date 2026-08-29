@@ -21,7 +21,7 @@ export function PaywallBanner({ activeCount, limit, onOpenUpgrade }: PaywallBann
             <h3 className="text-xs font-display font-semibold text-white tracking-tight">
               Free Tier Cap Reached ({activeCount}/{limit} Clients)
             </h3>
-            <span className="text-3xs font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 border border-amber-800/60">
+            <span className="text-3xs font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300">
               Upgrade Required
             </span>
           </div>

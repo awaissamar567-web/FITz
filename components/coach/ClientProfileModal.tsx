@@ -91,16 +91,16 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
                 <h2 className="text-lg font-display font-semibold text-white tracking-tight">
                   {displayName}
                 </h2>
-                <span className="font-mono text-xs text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded-md border border-white/[0.06]">
+                <span className="font-mono text-xs text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded-md">
                   @{client?.whop_user_id}
                 </span>
                 <span
                   className={`text-3xs font-medium px-2 py-0.5 rounded-md capitalize ${
                     client?.status === "active"
-                      ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
+                      ? "bg-emerald-950/80 text-emerald-300"
                       : isAtRisk
-                      ? "bg-amber-950/80 text-amber-300 border border-amber-800/60"
-                      : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                      ? "bg-amber-950/80 text-amber-300"
+                      : "bg-zinc-800 text-zinc-400"
                   }`}
                 >
                   {client?.status === "at_risk" ? "⚠️ At Risk (>7d)" : client?.status || "active"}
@@ -180,8 +180,8 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
             <span
               className={`text-3xs font-medium px-2 py-0.5 rounded-md ${
                 client?.intake_completed
-                  ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
-                  : "bg-amber-950/80 text-amber-300 border border-amber-800/60"
+                  ? "bg-emerald-950/80 text-emerald-300"
+                  : "bg-amber-950/80 text-amber-300"
               }`}
             >
               {client?.intake_completed ? "Intake Completed" : "Intake Incomplete"}
@@ -354,8 +354,8 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
                         <span
                           className={`text-3xs font-medium px-2 py-0.5 rounded-md ${
                             chk.macro_hit.hitTarget
-                              ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
-                              : "bg-amber-950/80 text-amber-300 border border-amber-800/60"
+                              ? "bg-emerald-950/80 text-emerald-300"
+                              : "bg-amber-950/80 text-amber-300"
                           }`}
                         >
                           {chk.macro_hit.hitTarget ? "Macros Hit" : "Macros Off"}

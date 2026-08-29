@@ -25,13 +25,13 @@ const palette = {
     line: "#3b82f6",
     glow: "#1754d8",
     text: "text-blue-400",
-    badge: "border-blue-500/25 bg-blue-500/10 text-blue-300",
+    badge: "bg-blue-500/10 text-blue-300",
   },
   emerald: {
     line: "#34d399",
     glow: "#059669",
     text: "text-emerald-400",
-    badge: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
+    badge: "bg-emerald-500/10 text-emerald-300",
   },
 } as const;
 
@@ -88,7 +88,7 @@ export function LineTrendChart({
           <div className={`text-2xl font-display font-semibold font-mono ${colors.text}`}>
             {latest}{valueSuffix}
           </div>
-          <span className={`inline-flex mt-1 rounded-md border px-2 py-0.5 text-3xs font-mono ${colors.badge}`}>
+          <span className={`inline-flex mt-1 rounded-md px-2 py-0.5 text-3xs font-mono ${colors.badge}`}>
             {change > 0 ? "+" : ""}{change}{valueSuffix} in range
           </span>
         </div>

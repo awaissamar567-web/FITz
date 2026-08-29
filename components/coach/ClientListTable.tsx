@@ -50,7 +50,7 @@ export function ClientListTable({
         <div>
           <div className="flex items-center gap-2.5">
             <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">Client Roster</h2>
-            <span className="text-3xs font-mono font-medium text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded-md border border-white/[0.06]">
+            <span className="text-3xs font-mono font-medium text-zinc-400 bg-white/[0.04] px-2 py-0.5 rounded-md">
               {clients.length} Members
             </span>
           </div>
@@ -152,12 +152,12 @@ export function ClientListTable({
                       <span
                         className={`text-3xs font-medium px-2 py-0.5 rounded-md capitalize inline-flex items-center gap-1 ${
                           !c.intake_completed
-                            ? "bg-sky-950/80 text-sky-300 border border-sky-800/60"
+                            ? "bg-sky-950/80 text-sky-300"
                             : isAtRisk
-                            ? "bg-amber-950/80 text-amber-300 border border-amber-800/60"
+                            ? "bg-amber-950/80 text-amber-300"
                             : c.status === "active"
-                            ? "bg-emerald-950/80 text-emerald-300 border border-emerald-800/60"
-                            : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                            ? "bg-emerald-950/80 text-emerald-300"
+                            : "bg-zinc-800 text-zinc-400"
                         }`}
                       >
                         {!c.intake_completed ? "Intake Pending" : isAtRisk ? "⚠️ At Risk" : c.status}
@@ -193,7 +193,7 @@ export function ClientListTable({
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => onAssignPlan(c)}
-                          className="py-1 px-2.5 rounded-lg bg-white/[0.04] hover:bg-[#1754d8] hover:text-white active:scale-[0.98] text-zinc-300 font-medium text-3xs border border-white/[0.08] transition-all flex items-center gap-1"
+                          className="py-1 px-2.5 rounded-lg bg-white/[0.04] hover:bg-[#1754d8] hover:text-white active:scale-[0.98] text-zinc-300 font-medium text-3xs transition-all flex items-center gap-1"
                         >
                           <Dumbbell className="w-3 h-3" />
                           <span>Assign Split</span>

@@ -517,7 +517,7 @@ export function CoachDashboard({
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all shrink-0 ${
                     retentionFilter === tab.id
                       ? "bg-[#1754d8] text-white shadow-md shadow-[#1754d8]/25"
-                      : "bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.06]"
+                      : "bg-white/[0.03] text-zinc-400 hover:text-white hover:bg-white/[0.06]"
                   }`}
                 >
                   {tab.label}
@@ -551,19 +551,19 @@ export function CoachDashboard({
                             <span className="text-sm font-display font-semibold text-white">
                               {(c as any).display_name || c.whop_user_id}
                             </span>
-                            <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.06]">
+                            <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md">
                               @{c.whop_user_id}
                             </span>
-                            <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300 border border-amber-800/60">
+                            <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-amber-950/80 text-amber-300">
                               ⚠️ {c.daysSinceLastCheckin}d Since Last Check-In
                             </span>
                             {isContacted && (
-                              <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300 border border-emerald-800/60">
+                              <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-emerald-950/80 text-emerald-300">
                                 ✓ Reached Out
                               </span>
                             )}
                             {isSnoozed && (
-                              <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
+                              <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300">
                                 ⏳ Snoozed
                               </span>
                             )}
@@ -631,10 +631,10 @@ export function CoachDashboard({
                           <span className="text-sm font-display font-semibold text-white">
                             {(c as any).display_name || c.whop_user_id}
                           </span>
-                          <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.06]">
+                          <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md">
                             @{c.whop_user_id}
                           </span>
-                          <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-sky-950/80 text-sky-300 border border-sky-800/60">
+                          <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-sky-950/80 text-sky-300">
                             📋 Intake Incomplete
                           </span>
                         </div>
@@ -672,10 +672,10 @@ export function CoachDashboard({
                           <span className="text-sm font-display font-semibold text-white">
                             {(c as any).display_name || c.whop_user_id}
                           </span>
-                          <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md border border-white/[0.06]">
+                          <span className="text-3xs font-mono text-zinc-500 bg-white/[0.03] px-2 py-0.5 rounded-md">
                             @{c.whop_user_id}
                           </span>
-                          <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300 border border-purple-800/60">
+                          <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-purple-950/80 text-purple-300">
                             ⚡ Awaiting Workout Split
                           </span>
                         </div>
@@ -792,7 +792,7 @@ export function CoachDashboard({
                       <Clock className="w-3.5 h-3.5 text-amber-400" />
                       At-Risk Inactivity Threshold
                     </label>
-                    <span className="text-xs font-mono font-medium text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-md border border-amber-800/60">
+                    <span className="text-xs font-mono font-medium text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded-md">
                       {atRiskThreshold} Days
                     </span>
                   </div>
