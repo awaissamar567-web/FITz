@@ -1,4 +1,5 @@
 import React from "react";
+import { redirect } from "next/navigation";
 import { requireClientAccess } from "@/lib/whop-auth";
 import { getCompanyById, getOrCreateCompany } from "@/lib/services/companies";
 import { createOrReactivateClient, getClientByExperienceAndUser } from "@/lib/services/clients";
@@ -38,6 +39,20 @@ export default async function ClientExperiencePage({
         reason="forbidden"
       />
     );
+  }
+
+  // Whop can open an Experience entry while a company team member is
+  // previewing as Admin. Send that admin to the coach surface automatically;
+  // customers remain on the member Experience below.
+  if (authContext.accessLevel === "admin") {
+    try {
+      const experience = await whopsdk.experiences.retrieve({ id: experienceId });
+      redirect(`/dashboard/${experience.company.id}`);
+    } catch (error: any) {
+      // Next.js implements redirect() by throwing a framework-owned error.
+      if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error;
+      console.error(`[Experience] Failed to resolve admin dashboard for ${experienceId}:`, error);
+    }
   }
 
   let client = await getClientByExperienceAndUser(experienceId, authContext.userId);
