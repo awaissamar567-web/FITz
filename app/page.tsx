@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Dumbbell, ShieldCheck, Users } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Dumbbell, ShieldCheck, Users } from "lucide-react";
 
 const capabilities = [
   "Whop-authenticated coach and member access",
@@ -48,16 +48,18 @@ export default function HomePage() {
                 <Dumbbell className="h-4 w-4" />
               </span>
             </div>
-            <h2 className="mt-5 font-display text-lg font-semibold text-white">Open FITz from Whop</h2>
+            <h2 className="mt-5 font-display text-lg font-semibold text-white">Open FITz in the Whop App Store</h2>
             <p className="mt-2 text-xs leading-5 text-zinc-400">
-              Launch the app from your Whop dashboard or purchased experience so Whop can securely identify your workspace and access level.
+              View the FITz listing on Whop to install the app or open it in your existing workspace.
             </p>
             <div className="mt-5 grid gap-2">
               <a
-                href="https://whop.com/dashboard"
+                href="https://whop.com/apps/app_tcO2dkjgaQiZBF/"
+                target="_blank"
+                rel="noreferrer"
                 className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#1754d8] px-4 text-xs font-medium text-white transition-[background-color,transform] duration-150 hover:bg-[#154ac0] active:scale-[0.98]"
               >
-                Open Whop dashboard <ArrowRight className="h-3.5 w-3.5" />
+                Open in Whop App Store <ArrowUpRight className="h-3.5 w-3.5" />
               </a>
               <Link
                 href="/discover"
