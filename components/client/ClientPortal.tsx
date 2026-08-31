@@ -9,7 +9,6 @@ import {
   TrendingUp,
   User,
   Utensils,
-  ExternalLink,
   Flame,
   Award,
   Clock,
@@ -27,6 +26,7 @@ import { HistoryView } from "@/components/client/HistoryView";
 import { IntakeForm } from "@/components/client/IntakeForm";
 import { normalizePlan, FormattedExercise } from "@/lib/utils/formatters";
 import { ToastNotification, ToastMessage } from "@/components/ui/ToastNotification";
+import { WorkspaceSidebar } from "@/components/ui/WorkspaceSidebar";
 
 interface ClientPortalProps {
   client?: Client;
@@ -126,129 +126,32 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
       {/* =========================================================================
           1. DESKTOP LEFT SIDEBAR NAVIGATION (md:flex)
           ========================================================================= */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-[#0c0c0e]/80 backdrop-blur-2xl border-r border-white/[0.08] min-h-screen p-5 sticky top-0 h-screen justify-between z-30 shadow-2xl">
-        <div className="space-y-6">
-          {/* Brand & Experience Header */}
-          <div className="space-y-3">
-            <div className="flex items-center px-1">
-              <img src="/brand/fitz_logo.png" alt="Fitz Member Portal" className="h-8 w-auto object-contain" />
-            </div>
-
-            {/* Member Profile Card */}
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md space-y-1 hover:border-white/[0.12] transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-white truncate">
-                  {memberName}
-                </span>
-              </div>
-              <p className="text-3xs font-mono text-zinc-500 truncate font-normal">
-                @{client.whop_user_id}
-              </p>
-            </div>
+      <WorkspaceSidebar
+        view="member"
+        name={memberName}
+        detail={`@${client.whop_user_id}`}
+        items={[
+          { label: "Today's Program", icon: Calendar, active: activeTab === "today", onClick: () => setActiveTab("today") },
+          { label: "Log Check-In", icon: CheckCircle2, active: activeTab === "checkin", onClick: () => setActiveTab("checkin") },
+          { label: "Check-In History", icon: History, active: activeTab === "history", onClick: () => setActiveTab("history") },
+          { label: "Workout Split", icon: Dumbbell, active: activeTab === "split", onClick: () => setActiveTab("split") },
+          { label: "Preferences", icon: Settings, active: activeTab === "settings", onClick: () => setActiveTab("settings") },
+        ]}
+        footer={(collapsed) => collapsed ? (
+          <div title={`Training goal: ${client.goal || "Hypertrophy"}`} className="flex min-h-11 items-center justify-center rounded-xl bg-white/[0.02]">
+            <Sparkles aria-hidden="true" className="h-4 w-4 text-fitzBtn" />
+            <span className="sr-only">Training goal: {client.goal || "Hypertrophy"}</span>
           </div>
-
-          {/* Navigation Links */}
-          <nav className="space-y-1.5">
-            <p className="px-2 text-3xs font-medium uppercase tracking-wider text-zinc-500 mb-2">
-              Member Menu
-            </p>
-
-            <button
-              onClick={() => setActiveTab("today")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "today"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Calendar className={`w-4 h-4 ${activeTab === "today" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Today's Program</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("checkin")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "checkin"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 className={`w-4 h-4 ${activeTab === "checkin" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Log Check-In</span>
-              </div>
-              <span className="text-3xs font-medium px-2 py-0.5 rounded-md bg-[#1754d8]/20 text-[#1754d8] border border-[#1754d8]/30">
-                Log
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("history")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "history"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <History className={`w-4 h-4 ${activeTab === "history" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Check-In History</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("split")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "split"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Dumbbell className={`w-4 h-4 ${activeTab === "split" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Workout Split</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "settings"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Settings className={`w-4 h-4 ${activeTab === "settings" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Preferences</span>
-              </div>
-            </button>
-          </nav>
-        </div>
-
-        {/* Sidebar Footer */}
-        <div className="space-y-3 pt-4 border-t border-white/[0.06]">
+        ) : (
           <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-3xs uppercase tracking-wider text-zinc-400 font-medium">Training Goal</span>
-              <Sparkles className="w-3 h-3 text-[#1754d8]" />
+              <Sparkles aria-hidden="true" className="w-3 h-3 text-fitzBtn" />
             </div>
-            <p className="text-xs font-medium text-white truncate">{client.goal || "Hypertrophy"}</p>
+            <p className="text-xs font-medium text-white truncate" title={client.goal || "Hypertrophy"}>{client.goal || "Hypertrophy"}</p>
           </div>
-
-          <a
-            href="https://whop.com/hub/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] text-3xs text-zinc-300 transition-colors border border-white/[0.06]"
-          >
-            <span>Whop Hub</span>
-            <ExternalLink className="w-3 h-3 text-zinc-500" />
-          </a>
-        </div>
-      </aside>
+        )}
+      />
 
       {/* =========================================================================
           2. MAIN CLIENT EXPERIENCE BODY

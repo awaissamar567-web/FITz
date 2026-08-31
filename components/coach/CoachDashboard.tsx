@@ -42,6 +42,7 @@ import { FREE_TIER_CLIENT_LIMIT, PRO_TIER_CLIENT_LIMIT } from "@/lib/constants/p
 import { coachingSlots } from "@/lib/entitlements";
 import { CoachingSlots } from "./CoachingSlots";
 import { ProFeature } from "./ProFeature";
+import { WorkspaceSidebar } from "@/components/ui/WorkspaceSidebar";
 
 interface CoachDashboardProps {
   companyId: string;
@@ -188,151 +189,33 @@ export function CoachDashboard({
       {/* =========================================================================
           1. DESKTOP LEFT SIDEBAR NAVIGATION (md:flex)
           ========================================================================= */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-[#0c0c0e]/80 backdrop-blur-2xl border-r border-white/[0.08] min-h-screen p-5 sticky top-0 h-screen justify-between z-30 shadow-2xl">
-        <div className="space-y-6">
-          {/* Brand & Workspace Header */}
-          <div className="space-y-3">
-            <div className="flex items-center px-1">
-              <img src="/brand/fitz_logo.png" alt="Coach Dashboard" className="h-8 w-auto object-contain" />
-            </div>
-
-            {/* Coach Profile Card */}
-            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-md space-y-1 hover:border-white/[0.12] transition-colors">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-white truncate">
-                  {company?.coach_name || "Coach workspace"}
-                </span>
-              </div>
-              <p className="text-3xs font-mono text-zinc-500 truncate font-normal">
-                {companyId}
-              </p>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="space-y-1.5">
-            <p className="px-2 text-3xs font-medium uppercase tracking-wider text-zinc-500 mb-2">
-              Workspace
+      <WorkspaceSidebar
+        view="coach"
+        name={company?.coach_name || "Coach workspace"}
+        detail={companyId}
+        items={[
+          { label: "Dashboard", icon: LayoutDashboard, active: activeTab === "dashboard", onClick: () => setActiveTab("dashboard") },
+          { label: "Clients & Roster", icon: Users, active: activeTab === "clients", badge: activeCount, onClick: () => setActiveTab("clients") },
+          { label: "Workout Splits", icon: Dumbbell, active: activeTab === "programs", onClick: () => setActiveTab("programs") },
+          { label: "Activity Feed", icon: Activity, active: activeTab === "feed", onClick: () => setActiveTab("feed") },
+          { label: "Retention & Churn", icon: Flame, active: activeTab === "retention", badge: atRiskCount > 0 ? atRiskCount : undefined, iconClassName: activeTab === "retention" ? "text-amber-400" : undefined, onClick: () => setActiveTab("retention") },
+          { label: "Coach Settings", icon: Settings, active: activeTab === "settings", onClick: () => setActiveTab("settings") },
+          { label: isRefreshing ? "Refreshing…" : "Refresh data", icon: RefreshCw, disabled: isRefreshing, separated: true, iconClassName: isRefreshing ? "text-zinc-400 motion-safe:animate-spin" : undefined, onClick: handleRefresh },
+        ]}
+        footer={(collapsed) => collapsed ? (
+          <div className="space-y-2 text-center">
+            <p className={`text-3xs font-medium ${isPro ? "text-blue-400" : "text-amber-400"}`}>{isPro ? "PRO" : "FREE"}</p>
+            <p className="text-3xs tabular-nums text-zinc-400" title={`${activeCount} of ${isPro ? PRO_TIER_CLIENT_LIMIT : FREE_TIER_CLIENT_LIMIT} coaching slots used`}>
+              {activeCount}/{isPro ? PRO_TIER_CLIENT_LIMIT : FREE_TIER_CLIENT_LIMIT}
             </p>
-
-            {/* 1. Dashboard Tab */}
-            <button
-              onClick={() => setActiveTab("dashboard")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "dashboard"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <LayoutDashboard className={`w-4 h-4 ${activeTab === "dashboard" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Dashboard</span>
-              </div>
-            </button>
-
-            {/* 2. Clients & Roster */}
-            <button
-              onClick={() => setActiveTab("clients")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "clients"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Users className={`w-4 h-4 ${activeTab === "clients" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Clients & Roster</span>
-              </div>
-              <span className="text-3xs font-mono text-zinc-500 font-normal">
-                {activeCount}
-              </span>
-            </button>
-
-            {/* 3. Workout Splits Builder */}
-            <button
-              onClick={() => setActiveTab("programs")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "programs"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Dumbbell className={`w-4 h-4 ${activeTab === "programs" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Workout Splits</span>
-              </div>
-            </button>
-
-            {/* 4. Activity Feed */}
-            <button
-              onClick={() => setActiveTab("feed")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "feed"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Activity className={`w-4 h-4 ${activeTab === "feed" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Activity Feed</span>
-              </div>
-            </button>
-
-            {/* 5. Retention & Churn */}
-            <button
-              onClick={() => setActiveTab("retention")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "retention"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Flame className={`w-4 h-4 ${activeTab === "retention" ? "text-amber-400" : "text-zinc-400"}`} />
-                <span>Retention & Churn</span>
-              </div>
-              {atRiskCount > 0 && (
-                <span className="text-3xs font-mono text-amber-400">
-                  {atRiskCount}
-                </span>
-              )}
-            </button>
-
-            {/* 6. Settings */}
-            <button
-              onClick={() => setActiveTab("settings")}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-all active:scale-[0.98] ${
-                activeTab === "settings"
-                  ? "bg-white/[0.08] text-white font-medium shadow-sm border border-white/[0.12] backdrop-blur-md"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] font-normal"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Settings className={`w-4 h-4 ${activeTab === "settings" ? "text-[#1754d8]" : "text-zinc-400"}`} />
-                <span>Coach Settings</span>
-              </div>
-            </button>
-
-            <div className="mt-2 border-t border-white/[0.06] pt-2">
-              <button
-                type="button"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                aria-label="Refresh dashboard data"
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-xs font-normal text-zinc-400 transition-[color,background-color,opacity,transform] duration-150 hover:bg-white/[0.03] hover:text-zinc-200 active:scale-[0.96] disabled:cursor-wait disabled:opacity-60"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 text-zinc-400 ${isRefreshing ? "animate-spin" : ""}`}
-                  strokeWidth={1.5}
-                />
-                <span>{isRefreshing ? "Refreshing…" : "Refresh data"}</span>
+            {!isPro && (
+              <button type="button" onClick={() => setIsPaywallOpen(true)} aria-label="Upgrade to Pro" title="Upgrade to Pro" className="flex min-h-11 w-full items-center justify-center rounded-xl bg-amber-600 text-white hover:bg-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white motion-safe:active:scale-[0.96]">
+                <Sparkles aria-hidden="true" className="h-4 w-4" />
               </button>
-            </div>
-          </nav>
-        </div>
-
-        {/* Sidebar Footer: Tier Status & Whop Portal */}
-        <div className="space-y-3 pt-4 border-t border-white/[0.06]">
+            )}
+          </div>
+        ) : (
+          <>
           {company?.plan === "pro" ? (
             <div className="p-3.5 rounded-xl bg-gradient-to-br from-[#1754d8]/20 via-[#1754d8]/10 to-transparent border border-[#1754d8]/40 space-y-2 shadow-lg shadow-[#1754d8]/10">
               <div className="flex items-center justify-between">
@@ -366,18 +249,9 @@ export function CoachDashboard({
               </button>
             </div>
           )}
-
-          <a
-            href="https://whop.com/hub/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-between px-2.5 py-1.5 text-3xs text-zinc-400 hover:text-white transition-colors"
-          >
-            <span>Whop Hub</span>
-            <ExternalLink className="w-3 h-3 text-zinc-500" />
-          </a>
-        </div>
-      </aside>
+          </>
+        )}
+      />
 
       {/* =========================================================================
           2. MAIN COACH WORKSPACE BODY (Full Responsive Width)
