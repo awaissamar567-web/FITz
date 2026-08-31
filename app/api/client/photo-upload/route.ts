@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireClientAccess } from "@/lib/whop-auth";
+import { memberContext } from "@/lib/member-context";
+import { requireCoachingSlot } from "@/lib/services/entitlements";
+import { requirePro } from "@/lib/entitlements";
 import { apiErrorResponse } from "@/lib/api-errors";
-import { getClientByWhopUserId } from "@/lib/services/clients";
-import { getOrCreateCompany } from "@/lib/services/companies";
 import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
@@ -28,7 +28,9 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo = process.env.NODE_ENV !== "production" && req.nextUrl.searchParams.get("demo") === "true";
-    const auth = await requireClientAccess(experienceId, isDemo);
+    const { auth, company, client } = await memberContext(experienceId, companyId, isDemo);
+    const currentCompany = await requireCoachingSlot(company, client.id);
+    requirePro(currentCompany, "Progress photos");
     const userId = auth.userId;
 
     const { checkRateLimit } = await import("@/lib/rate-limiter");
@@ -38,16 +40,6 @@ export async function POST(req: NextRequest) {
         status: 429,
         headers: { "Retry-After": String(rateLimit.resetSeconds) },
       });
-    }
-
-    const company = await getOrCreateCompany(companyId);
-    if (!company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
-    }
-
-    const client = await getClientByWhopUserId(company.id, userId);
-    if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
     // Generate secure storage path: company_id/client_id/timestamp_random.ext

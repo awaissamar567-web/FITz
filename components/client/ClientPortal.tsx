@@ -33,11 +33,13 @@ interface ClientPortalProps {
   initialClient?: Client;
   initialPlan: Plan | null;
   experienceId: string;
+  isPro?: boolean;
+  coachingEnabled?: boolean;
 }
 
 type ClientNavTab = "today" | "checkin" | "history" | "split" | "settings";
 
-export function ClientPortal({ client: clientProp, initialClient: initialClientProp, initialPlan, experienceId }: ClientPortalProps) {
+export function ClientPortal({ client: clientProp, initialClient: initialClientProp, initialPlan, experienceId, isPro = false, coachingEnabled = true }: ClientPortalProps) {
   const initialClient = (clientProp || initialClientProp)!;
   const [client, setClient] = useState<Client>(initialClient);
   const [plan, setPlan] = useState<Plan | null>(initialPlan);
@@ -51,6 +53,9 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
   const [savingSettings, setSavingSettings] = useState(false);
 
   // If intake is not completed, show the onboarding intake form
+  if (!intakeDone && !coachingEnabled) {
+    return <main className="min-h-screen bg-darkBg text-white p-6 grid place-items-center"><section className="max-w-lg rounded-2xl bg-darkCard p-6 space-y-3"><h1 className="font-display text-xl font-semibold">Waiting for your coaching slot</h1><p className="text-sm text-zinc-400">Your membership is recognized. Ask your coach to enable your FITz coaching slot before starting intake. No membership or history has been deleted.</p><button type="button" onClick={() => window.location.reload()} className="min-h-11 rounded-xl bg-fitzBtn px-4 text-xs font-semibold">Refresh access</button></section></main>;
+  }
   if (!intakeDone) {
     return (
       <main className="min-h-screen bg-[#111111] text-zinc-100 flex items-center justify-center p-4 sm:p-6 font-sans">
@@ -249,6 +254,7 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
           2. MAIN CLIENT EXPERIENCE BODY
           ========================================================================= */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
+        {!coachingEnabled && <section role="status" className="rounded-xl bg-amber-950/30 p-4 text-xs text-amber-200">Coaching is paused. Your history and existing workouts remain available. Ask your coach to enable your coaching slot for new check-ins.</section>}
         {/* Top Header Card */}
         <div className="p-5 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -277,6 +283,7 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
         <div className="animate-in fade-in">
           {activeTab === "today" && (
             <TodayView
+              isPro={isPro}
               client={client}
               plan={plan}
               onNavigateToCheckin={() => setActiveTab("checkin")}
@@ -285,6 +292,8 @@ export function ClientPortal({ client: clientProp, initialClient: initialClientP
 
           {activeTab === "checkin" && (
             <CheckinForm
+              isPro={isPro}
+              coachingEnabled={coachingEnabled}
               clientId={client.id}
               companyId={client.company_id}
               experienceId={experienceId}

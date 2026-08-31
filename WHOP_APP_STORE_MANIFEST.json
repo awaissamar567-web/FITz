@@ -20,20 +20,21 @@
         "name": "Free Tier",
         "price": 0,
         "features": [
-          "Up to 5 active clients",
+          "Up to 3 selected coaching clients; other members retain history",
           "Custom workout split builder",
-          "Daily nutrition macro targets",
-          "Weekly progress check-in logger"
+          "Weight check-ins and member training notes",
+          "Custom 7-day workouts"
         ]
       },
       {
-        "id": "plan_fitz_pro",
+        "id_source": "WHOP_PRO_PLAN_ID",
         "name": "Fitz Pro",
-        "price": 2900,
-        "currency": "usd",
-        "billing_period": "monthly",
+        "price_source": "Existing Whop plan checkout; do not create or reprice a plan from this document",
         "features": [
-          "Unlimited active coaching clients",
+          "Up to 250 active coaching clients",
+          "Reusable 7-day program templates",
+          "Nutrition targets and macro tracking",
+          "Persistent coach feedback on check-ins",
           "Real-time live check-in activity feed",
           "Automated at-risk churn detection alerts",
           "Direct Whop native chat re-engagement link",

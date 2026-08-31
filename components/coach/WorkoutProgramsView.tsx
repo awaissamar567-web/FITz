@@ -25,9 +25,12 @@ import { EnrichedClient } from "@/components/coach/ClientListTable";
 import { DayOfWeek, DayRoutine, ExerciseItem } from "@/types/database";
 import { ToastNotification, ToastMessage } from "@/components/ui/ToastNotification";
 import { CustomSelect, SelectOption } from "@/components/ui/CustomSelect";
+import { ProFeature } from "./ProFeature";
 
 interface WorkoutProgramsViewProps {
   companyId: string;
+  isPro?: boolean;
+  onUpgrade?: () => void;
   clients: EnrichedClient[];
   preSelectedClientId?: string | null;
   onClientSelect?: (clientId: string) => void;
@@ -43,211 +46,7 @@ const DAYS_OF_WEEK: DayOfWeek[] = [
   "Sunday",
 ];
 
-interface ProgramTemplate {
-  id: string;
-  name: string;
-  description: string;
-  macros: { calories: string; protein: string; carbs: string; fats: string };
-  schedule: { [day in DayOfWeek]: { splitName: string; exercises: ExerciseItem[] } };
-}
-
-const PREBUILT_TEMPLATES: Record<string, ProgramTemplate> = {
-  ppl: {
-    id: "ppl",
-    name: "Push / Pull / Legs (PPL - 6-Day)",
-    description: "High-volume hypertrophy split targeting chest, back, and legs twice weekly.",
-    macros: { calories: "2800", protein: "195", carbs: "310", fats: "75" },
-    schedule: {
-      Monday: {
-        splitName: "Push (Chest, Delts & Triceps)",
-        exercises: [
-          { name: "Incline Dumbbell Press", sets: "4", reps: "8-10", notes: "30-deg bench, 2s eccentric pause" },
-          { name: "Barbell Bench Press", sets: "3", reps: "6-8", notes: "Control descent, touch lower chest" },
-          { name: "Standing Overhead DB Press", sets: "3", reps: "10-12", notes: "Full range of motion" },
-          { name: "Cable Lateral Raises", sets: "4", reps: "15", notes: "Constant tension on side delts" },
-          { name: "Tricep Rope Pushdowns", sets: "3", reps: "12-15", notes: "Flare ropes at full lockout" },
-        ],
-      },
-      Tuesday: {
-        splitName: "Pull (Back, Lats & Biceps)",
-        exercises: [
-          { name: "Conventional Deadlift", sets: "3", reps: "5", notes: "Reset hips between reps" },
-          { name: "Chest-Supported Row", sets: "4", reps: "8-10", notes: "Squeeze shoulder blades" },
-          { name: "Wide-Grip Lat Pulldown", sets: "3", reps: "10-12", notes: "Drive elbows to ribs" },
-          { name: "Face Pulls", sets: "4", reps: "15", notes: "External rotation focus" },
-          { name: "Incline DB Bicep Curls", sets: "3", reps: "10-12", notes: "Supinate at top" },
-        ],
-      },
-      Wednesday: {
-        splitName: "Legs & Calves",
-        exercises: [
-          { name: "Barbell Back Squat", sets: "4", reps: "6-8", notes: "Parallel depth, brace core" },
-          { name: "Romanian Deadlift (RDL)", sets: "3", reps: "8-10", notes: "Push hips back, feel hamstring stretch" },
-          { name: "Bulgarian Split Squats", sets: "3", reps: "10-12", notes: "Knee in line with middle toe" },
-          { name: "Standing Calf Raises", sets: "4", reps: "15", notes: "2s pause at peak" },
-        ],
-      },
-      Thursday: {
-        splitName: "Push Hypertrophy",
-        exercises: [
-          { name: "Incline Smith Machine Press", sets: "4", reps: "10-12", notes: "Controlled tempo" },
-          { name: "Dumbbell Flyes", sets: "3", reps: "12", notes: "Deep stretch at bottom" },
-          { name: "DB Lateral Raises", sets: "4", reps: "15", notes: "Strict form, no swinging" },
-          { name: "Overhead Cable Extension", sets: "3", reps: "12-15", notes: "Long head tricep focus" },
-        ],
-      },
-      Friday: {
-        splitName: "Pull & Lats Hypertrophy",
-        exercises: [
-          { name: "Weighted Pull-Ups", sets: "3", reps: "6-8", notes: "Add weight belt if needed" },
-          { name: "Neutral-Grip Cable Rows", sets: "4", reps: "10-12", notes: "Pull with elbows" },
-          { name: "Straight-Arm Cable Pulldown", sets: "3", reps: "15", notes: "Isolate lats" },
-          { name: "Hammer Curls", sets: "3", reps: "12", notes: "Brachialis focus" },
-        ],
-      },
-      Saturday: {
-        splitName: "Legs & Hamstring Focus",
-        exercises: [
-          { name: "Front Squats", sets: "4", reps: "8-10", notes: "High elbows, upright torso" },
-          { name: "Lying Leg Curls", sets: "4", reps: "12", notes: "Slow 3s eccentric" },
-          { name: "Leg Press", sets: "3", reps: "15", notes: "Feet shoulder-width" },
-          { name: "Seated Calf Raises", sets: "4", reps: "15", notes: "Full stretch" },
-        ],
-      },
-      Sunday: {
-        splitName: "Rest & Recovery",
-        exercises: [],
-      },
-    },
-  },
-  upper_lower: {
-    id: "upper_lower",
-    name: "Upper / Lower Split (4-Day)",
-    description: "Balanced powerbuilding routine alternating upper and lower sessions.",
-    macros: { calories: "2650", protein: "185", carbs: "290", fats: "70" },
-    schedule: {
-      Monday: {
-        splitName: "Upper Power",
-        exercises: [
-          { name: "Barbell Bench Press", sets: "4", reps: "5", notes: "Heavy power work" },
-          { name: "Bent-Over Barbell Row", sets: "4", reps: "6-8", notes: "Torso 45 degrees" },
-          { name: "Standing Overhead Press", sets: "3", reps: "6", notes: "Strict overhead pressing" },
-          { name: "Pull-Ups", sets: "3", reps: "8", notes: "Full lockout" },
-        ],
-      },
-      Tuesday: {
-        splitName: "Lower Power",
-        exercises: [
-          { name: "Barbell Back Squat", sets: "4", reps: "5", notes: "Power work, brace firmly" },
-          { name: "Romanian Deadlift", sets: "3", reps: "6-8", notes: "Heavy loading" },
-          { name: "Leg Press", sets: "3", reps: "10", notes: "Deep knee bend" },
-          { name: "Hanging Leg Raises", sets: "3", reps: "15", notes: "Core compression" },
-        ],
-      },
-      Wednesday: { splitName: "Rest & Active Recovery", exercises: [] },
-      Thursday: {
-        splitName: "Upper Hypertrophy",
-        exercises: [
-          { name: "Incline DB Press", sets: "4", reps: "8-10", notes: "Squeeze upper pecs" },
-          { name: "Lat Pulldown", sets: "4", reps: "10-12", notes: "Pause at bottom" },
-          { name: "Dumbbell Lateral Raises", sets: "4", reps: "12-15", notes: "Side delts" },
-          { name: "Incline DB Curls", sets: "3", reps: "12", notes: "Bicep peak" },
-          { name: "Cable Tricep Pushdown", sets: "3", reps: "12-15", notes: "Tricep pump" },
-        ],
-      },
-      Friday: {
-        splitName: "Lower Hypertrophy",
-        exercises: [
-          { name: "Bulgarian Split Squats", sets: "3", reps: "10-12", notes: "Quads & glutes" },
-          { name: "Barbell Hip Thrusts", sets: "4", reps: "10-12", notes: "Glute lockout" },
-          { name: "Seated Leg Extensions", sets: "3", reps: "15", notes: "Quad pump" },
-          { name: "Lying Hamstring Curls", sets: "3", reps: "15", notes: "Slow negative" },
-        ],
-      },
-      Saturday: { splitName: "Rest Day", exercises: [] },
-      Sunday: { splitName: "Rest Day", exercises: [] },
-    },
-  },
-  full_body: {
-    id: "full_body",
-    name: "Full Body Metabolic (3-Day)",
-    description: "Efficient whole-body training designed for fat loss, conditioning, and joint health.",
-    macros: { calories: "2050", protein: "155", carbs: "190", fats: "55" },
-    schedule: {
-      Monday: {
-        splitName: "Full Body A (Strength Focus)",
-        exercises: [
-          { name: "Goblet Squats", sets: "4", reps: "10-12", notes: "Deep squat, keep chest up" },
-          { name: "DB Flat Bench Press", sets: "3", reps: "10-12", notes: "Controlled pressing" },
-          { name: "Lat Pulldowns", sets: "3", reps: "10-12", notes: "Full stretch" },
-          { name: "Plank Hold", sets: "3", reps: "45s", notes: "Brace glutes and abs" },
-        ],
-      },
-      Tuesday: { splitName: "Rest & Walking", exercises: [] },
-      Wednesday: {
-        splitName: "Full Body B (Hypertrophy)",
-        exercises: [
-          { name: "Romanian Deadlifts", sets: "3", reps: "10-12", notes: "Hamstrings & glutes" },
-          { name: "DB Shoulder Press", sets: "3", reps: "12", notes: "Strict overhead" },
-          { name: "Cable Seated Rows", sets: "3", reps: "12", notes: "Mid-back thickness" },
-          { name: "Walking Lunges", sets: "3", reps: "12", notes: "12 per leg" },
-        ],
-      },
-      Thursday: { splitName: "Rest Day", exercises: [] },
-      Friday: {
-        splitName: "Full Body C (Metabolic Conditioning)",
-        exercises: [
-          { name: "Leg Press", sets: "3", reps: "15", notes: "Continuous tension" },
-          { name: "Push-Ups", sets: "3", reps: "15", notes: "Bodyweight form" },
-          { name: "Face Pulls", sets: "3", reps: "15", notes: "Shoulder health" },
-          { name: "Kettlebell Swings", sets: "4", reps: "20", notes: "Explosive hip drive" },
-        ],
-      },
-      Saturday: { splitName: "Rest Day", exercises: [] },
-      Sunday: { splitName: "Rest Day", exercises: [] },
-    },
-  },
-  beginner: {
-    id: "beginner",
-    name: "Beginner Dumbbells & Core (3-Day)",
-    description: "Foundational strength habit program using minimal dumbbell and bodyweight equipment.",
-    macros: { calories: "2200", protein: "160", carbs: "220", fats: "60" },
-    schedule: {
-      Monday: {
-        splitName: "Dumbbells Upper & Core",
-        exercises: [
-          { name: "DB Floor Press", sets: "3", reps: "10-12", notes: "Safe shoulder position" },
-          { name: "DB Two-Arm Row", sets: "3", reps: "10-12", notes: "Flat back" },
-          { name: "DB Lateral Raises", sets: "3", reps: "12", notes: "Light weights" },
-          { name: "Deadbug", sets: "3", reps: "10", notes: "Controlled core" },
-        ],
-      },
-      Tuesday: { splitName: "Rest Day", exercises: [] },
-      Wednesday: {
-        splitName: "Dumbbells Lower Body",
-        exercises: [
-          { name: "DB Goblet Squats", sets: "3", reps: "10-12", notes: "Hold bell at chest" },
-          { name: "DB Romanian Deadlifts", sets: "3", reps: "10-12", notes: "Hinge at hips" },
-          { name: "Glute Bridges", sets: "3", reps: "15", notes: "2s squeeze at top" },
-          { name: "Standing Calf Raises", sets: "3", reps: "15", notes: "Full range" },
-        ],
-      },
-      Thursday: { splitName: "Rest Day", exercises: [] },
-      Friday: {
-        splitName: "Full Body Circuit",
-        exercises: [
-          { name: "DB Thrusters", sets: "3", reps: "10", notes: "Squat to overhead press" },
-          { name: "DB Bicep Curl to Press", sets: "3", reps: "10", notes: "Smooth transition" },
-          { name: "Bird-Dog", sets: "3", reps: "10", notes: "Per side" },
-          { name: "Mountain Climbers", sets: "3", reps: "30s", notes: "Cardio conditioning" },
-        ],
-      },
-      Saturday: { splitName: "Rest Day", exercises: [] },
-      Sunday: { splitName: "Rest Day", exercises: [] },
-    },
-  },
-};
-
+import type { ProgramTemplate } from "@/lib/server/program-templates";
 const DEFAULT_SCHEDULE: { [day in DayOfWeek]: { splitName: string; exercises: ExerciseItem[] } } = {
   Monday: { splitName: "", exercises: [] },
   Tuesday: { splitName: "", exercises: [] },
@@ -261,13 +60,30 @@ const DEFAULT_SCHEDULE: { [day in DayOfWeek]: { splitName: string; exercises: Ex
 export function WorkoutProgramsView({
   companyId,
   clients,
+  isPro = false,
+  onUpgrade,
   preSelectedClientId,
 }: WorkoutProgramsViewProps) {
+  const [templates, setTemplates] = useState<Record<string, ProgramTemplate>>({});
+  const [templateError, setTemplateError] = useState("");
+  useEffect(() => {
+    if (!isPro) { setTemplates({}); return; }
+    let cancelled = false;
+    fetch(`/api/coach/templates?companyId=${encodeURIComponent(companyId)}`)
+      .then(async res => { const data = await res.json(); if (!res.ok) throw new Error(data.error || "Templates could not load"); return data; })
+      .then(data => { if (!cancelled) { setTemplates(data.templates); setTemplateError(""); } })
+      .catch(error => { if (!cancelled) setTemplateError(error.message); });
+    return () => { cancelled = true; };
+  }, [companyId, isPro]);
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>("ppl");
   // Target member state
   const [selectedClientId, setSelectedClientId] = useState<string>(
-    preSelectedClientId || (clients.length > 0 ? clients[0].id : "")
+    (clients.some(c => c.id === preSelectedClientId) ? preSelectedClientId! : clients[0]?.id) || ""
   );
+
+  useEffect(() => {
+    if (!clients.some(c => c.id === selectedClientId)) setSelectedClientId(clients[0]?.id || "");
+  }, [clients, selectedClientId]);
 
   // Active day selected for exercise breakdown
   const [activeDay, setActiveDay] = useState<DayOfWeek>("Monday");
@@ -292,6 +108,7 @@ export function WorkoutProgramsView({
 
   // Status state & Toast notification
   const [loadingPlan, setLoadingPlan] = useState(false);
+  const [loadedClientId, setLoadedClientId] = useState("");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
@@ -308,12 +125,22 @@ export function WorkoutProgramsView({
   // Load selected client's unique custom plan whenever selectedClientId changes
   useEffect(() => {
     if (!selectedClientId) return;
+    let cancelled = false;
+    const controller = new AbortController();
 
     const fetchClientPlan = async () => {
       setLoadingPlan(true);
+      setLoadedClientId("");
+      setScheduleState(DEFAULT_SCHEDULE);
+      setPdfUrl(null);
+      setPdfFile(null);
+      setCalories(""); setProtein(""); setCarbs(""); setFats("");
+      setSodium(""); setSugar(""); setFiber("");
       try {
-        const res = await fetch(`/api/coach/clients/${selectedClientId}?companyId=${companyId}`);
+        const res = await fetch(`/api/coach/clients/${selectedClientId}?companyId=${companyId}`, { signal: controller.signal });
         const data = await res.json();
+        if (cancelled) return;
+        if (!res.ok) throw new Error(data.error || "Unable to load this member's workout");
 
         if (data.plan) {
           const p = data.plan;
@@ -366,14 +193,18 @@ export function WorkoutProgramsView({
           setFiber("");
           setPdfUrl(null);
         }
+        setLoadedClientId(selectedClientId);
       } catch (err) {
+        if (cancelled) return;
+        setToast({ id: Date.now().toString(), type: "error", message: "Workout could not load. Select the member again before saving." });
         console.error("Failed to load client plan:", err);
       } finally {
-        setLoadingPlan(false);
+        if (!cancelled) setLoadingPlan(false);
       }
     };
 
     fetchClientPlan();
+    return () => { cancelled = true; controller.abort(); };
   }, [selectedClientId, companyId]);
 
   // Handler to update the split name for a specific day
@@ -459,6 +290,7 @@ export function WorkoutProgramsView({
 
   // Save & Deploy Plan strictly to the selected client
   const handleSaveAndDeploy = async () => {
+    if (saving || loadingPlan || loadedClientId !== selectedClientId) return;
     if (!selectedClientId) {
       setToast({
         id: Date.now().toString(),
@@ -488,7 +320,7 @@ export function WorkoutProgramsView({
         clientId: selectedClientId,
         split_name: scheduleState[activeDay]?.splitName || "Weekly Split",
         exercises: primaryExercises,
-        macros: {
+        macros: isPro ? {
           calories: calories ? parseInt(calories) : 2000,
           protein: protein ? parseInt(protein) : 150,
           carbs: carbs ? parseInt(carbs) : 200,
@@ -496,7 +328,7 @@ export function WorkoutProgramsView({
           sodium: sodium ? parseInt(sodium) : 2300,
           sugar: sugar ? parseInt(sugar) : 35,
           fiber: fiber ? parseInt(fiber) : 30,
-        },
+        } : undefined,
         schedule: scheduleArray,
         pdf_url: pdfUrl || undefined,
       };
@@ -533,7 +365,8 @@ export function WorkoutProgramsView({
 
   // Handler for applying prebuilt workout program templates
   const handleApplyTemplate = () => {
-    const template = PREBUILT_TEMPLATES[selectedTemplateKey];
+    if (!isPro) { onUpgrade?.(); return; }
+    const template = templates[selectedTemplateKey];
     if (!template) return;
 
     setScheduleState(template.schedule);
@@ -586,6 +419,7 @@ export function WorkoutProgramsView({
         </div>
       </div>
 
+      {!isPro ? <ProFeature title="Reusable 7-day templates" description="Create custom workouts on Free. Pro adds ready-to-use PPL, upper/lower and other reusable programs." onUpgrade={onUpgrade} /> : <>
       {/* Reusable Program Templates Toolbar */}
       <div className="p-3.5 sm:p-4 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-30">
         <div className="flex items-center gap-2.5">
@@ -620,6 +454,10 @@ export function WorkoutProgramsView({
           </button>
         </div>
       </div>
+
+      {templateError && <p role="alert" className="text-xs text-red-300">{templateError}</p>}
+      </>}
+      {clients.length === 0 && <p className="text-xs text-amber-300">Enable a client in Clients & Roster → Your coaching slots before assigning a workout.</p>}
 
       {/* Main Grid: 7-Day Weekly Schedule (Left) + Selected Day Exercise Builder (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 relative z-10">
@@ -798,6 +636,7 @@ export function WorkoutProgramsView({
             )}
           </div>
 
+          {isPro ? <>
           {/* =====================================================================
               NUTRITIONAL MACRO TARGETS FOR THIS CLIENT
               ===================================================================== */}
@@ -869,6 +708,9 @@ export function WorkoutProgramsView({
             </div>
           </div>
 
+
+          </> : <ProFeature title="Macro targets & tracking" description="Pro lets you set nutrition targets and track macro adherence." onUpgrade={onUpgrade} />}
+
           {/* =====================================================================
               OPTIONAL PDF ROUTINE ATTACHMENT
               ===================================================================== */}
@@ -907,7 +749,7 @@ export function WorkoutProgramsView({
           <div className="flex items-center justify-end gap-3 pt-2">
             <button
               onClick={handleSaveAndDeploy}
-              disabled={saving}
+              disabled={saving || !selectedClientId || loadingPlan || loadedClientId !== selectedClientId}
               className="py-3 px-6 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white font-medium text-xs shadow-lg shadow-[#1754d8]/25 transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {saving ? (

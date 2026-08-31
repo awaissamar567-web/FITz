@@ -63,6 +63,7 @@ export async function getCurrentPlan(
     if (!error && data) {
       return data as Plan;
     }
+    if (!isMockEnv) return null;
   } catch (err) {
     if (!isMockEnv) throw err;
     console.warn("[Plans] Remote getCurrentPlan failed, falling back to memory:", err);
@@ -178,6 +179,7 @@ export async function savePlan(
     console.warn("[Plans] Remote savePlan failed, saving to memory fallback:", err);
   }
 
+  if (!isMockEnv) throw new Error("Workout plan could not be saved");
   // In-memory fallback
   const key = `${companyId}:${clientId}`;
   const mockPlan: Plan = {

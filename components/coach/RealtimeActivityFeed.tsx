@@ -88,7 +88,7 @@ export function RealtimeActivityFeed({
                       {item.weight} kg
                     </span>
                   )}
-                  {item.macro_hit && (
+                  {item.macro_hit && Object.keys(item.macro_hit).length > 0 && (
                     <span
                       className={`text-3xs px-1.5 py-0.2 rounded font-medium ${
                         item.macro_hit.hitTarget

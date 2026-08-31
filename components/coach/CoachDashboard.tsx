@@ -38,7 +38,10 @@ import { CoachAnalyticsDashboard } from "@/components/coach/CoachAnalyticsDashbo
 import { PaywallBanner } from "@/components/coach/PaywallBanner";
 import { PaywallModal } from "@/components/coach/PaywallModal";
 import { ToastNotification, ToastMessage } from "@/components/ui/ToastNotification";
-import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
+import { FREE_TIER_CLIENT_LIMIT, PRO_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
+import { coachingSlots } from "@/lib/entitlements";
+import { CoachingSlots } from "./CoachingSlots";
+import { ProFeature } from "./ProFeature";
 
 interface CoachDashboardProps {
   companyId: string;
@@ -86,8 +89,11 @@ export function CoachDashboard({
   const [savingSettings, setSavingSettings] = useState(false);
 
   // Metrics
-  const activeCount = clients.filter((c) => c.status === "active" || c.status === "at_risk").length;
-  const atRiskClients = clients.filter(
+  const isPro = company?.plan === "pro";
+  const slots = company ? coachingSlots(company, clients) : null;
+  const coachingClients = clients.filter(c => slots?.selectedIds.includes(c.id));
+  const activeCount = slots?.activeCount || 0;
+  const atRiskClients = coachingClients.filter(
     (c) =>
       c.status === "at_risk" ||
       (c.daysSinceLastCheckin != null &&
@@ -96,7 +102,7 @@ export function CoachDashboard({
   const atRiskCount = atRiskClients.length;
 
   // 4-Tier Operational Triage Queue
-  const overdueClients = clients.filter(
+  const overdueClients = coachingClients.filter(
     (c) =>
       c.status !== "cancelled" &&
       c.intake_completed &&
@@ -104,11 +110,11 @@ export function CoachDashboard({
       c.daysSinceLastCheckin >= (company?.at_risk_threshold_days || 7)
   );
 
-  const intakePendingClients = clients.filter(
+  const intakePendingClients = coachingClients.filter(
     (c) => c.status !== "cancelled" && !c.intake_completed
   );
 
-  const missingPlanClients = clients.filter(
+  const missingPlanClients = coachingClients.filter(
     (c) => c.status !== "cancelled" && c.intake_completed && !c.hasActivePlan
   );
 
@@ -336,7 +342,7 @@ export function CoachDashboard({
                 </div>
                 <span className="text-3xs uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#1754d8]/30 text-[#60a5fa] font-mono font-medium">PRO</span>
               </div>
-              <p className="text-3xs text-zinc-300 font-normal">Unlimited client capacity & real-time telemetry active</p>
+              <p className="text-3xs text-zinc-300 font-normal">Up to 250 coaching clients & Pro tools active</p>
             </div>
           ) : (
             <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-800/50 space-y-2">
@@ -378,10 +384,13 @@ export function CoachDashboard({
           ========================================================================= */}
       <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Paywall Banner if Free Tier Reached Cap */}
-        {isFreeTierCapped && (
+        {(isFreeTierCapped || (slots?.waitingCount || 0) > 0) && (
           <PaywallBanner
             activeCount={activeCount}
-            limit={FREE_TIER_CLIENT_LIMIT}
+            limit={slots?.limit || FREE_TIER_CLIENT_LIMIT}
+            waitingCount={slots?.waitingCount || 0}
+            isPro={isPro}
+            onManage={() => setActiveTab("clients")}
             onOpenUpgrade={() => setIsPaywallOpen(true)}
           />
         )}
@@ -401,6 +410,8 @@ export function CoachDashboard({
           />
         )}
 
+        {activeTab === "clients" && company && <CoachingSlots company={company} clients={clients} onSaved={setCompany} />}
+
         {/* -----------------------------------------------------------------------
             TAB 1: DEDICATED CLIENTS & ROSTER VIEW
             ----------------------------------------------------------------------- */}
@@ -419,13 +430,14 @@ export function CoachDashboard({
               {/* Client List (Spans 2 cols on wide screens) */}
               <div className="lg:col-span-2">
                 <ClientListTable
-                  clients={filteredClients}
+                  clients={filteredClients.map(c => ({ ...c, coachingEnabled: slots?.selectedIds.includes(c.id) ?? false }))}
                   selectedStatus={selectedStatus}
                   onStatusChange={setSelectedStatus}
                   searchQuery={searchQuery}
                   onSearchChange={setSearchQuery}
                   onSelectClient={(clientId) => setActiveProfileClientId(clientId)}
                   onAssignPlan={(client) => {
+                    if (!slots?.selectedIds.includes(client.id)) return;
                     setActiveProgramClientId(client.id);
                     setActiveTab("programs");
                   }}
@@ -450,7 +462,9 @@ export function CoachDashboard({
         {activeTab === "programs" && (
           <WorkoutProgramsView
             companyId={companyId}
-            clients={clients}
+            clients={coachingClients}
+            isPro={isPro}
+            onUpgrade={() => setIsPaywallOpen(true)}
             preSelectedClientId={activeProgramClientId}
           />
         )}
@@ -474,7 +488,8 @@ export function CoachDashboard({
         {/* -----------------------------------------------------------------------
             TAB 4: OPERATIONAL RETENTION & CHURN INTERVENTION QUEUE
             ----------------------------------------------------------------------- */}
-        {activeTab === "retention" && (
+        {activeTab === "retention" && !isPro && <ProFeature title="Automated churn queue" description="Pro highlights missed check-ins and helps you follow up with members. Your roster and basic check-ins remain available on Free." onUpgrade={() => setIsPaywallOpen(true)} />}
+        {activeTab === "retention" && isPro && (
           <div className="space-y-6">
             {/* Header & KPI Summary Banner */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-4">
@@ -854,7 +869,7 @@ export function CoachDashboard({
                     </div>
                     <p className="text-3xs text-zinc-400 font-normal">
                       {company?.plan === "pro"
-                        ? "Unlimited client capacity & real-time analytics"
+                        ? "Up to 250 coaching clients & Pro tools"
                         : `${FREE_TIER_CLIENT_LIMIT} client capacity cap`}
                     </p>
                   </div>
@@ -970,6 +985,7 @@ export function CoachDashboard({
           ========================================================================= */}
       {activeProfileClientId && (
         <ClientProfileModal
+          key={`${activeProfileClientId}-${company?.plan}-${slots?.selectedIds.join(",")}`}
           companyId={companyId}
           clientId={activeProfileClientId}
           onClose={() => setActiveProfileClientId(null)}
@@ -980,6 +996,7 @@ export function CoachDashboard({
         <PlanAssignmentModal
           companyId={companyId}
           client={activePlanClient}
+          isPro={isPro}
           onClose={() => setActivePlanClient(null)}
           onSuccess={() => {
             setActivePlanClient(null);
@@ -1002,7 +1019,7 @@ export function CoachDashboard({
               id: Date.now().toString(),
               type: "success",
               title: "Upgraded to FITz Pro!",
-              message: "Unlimited client capacity & real-time telemetry are now active.",
+              message: "Up to 250 coaching clients and Pro tools are now active.",
             });
           }}
         />

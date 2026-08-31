@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireClientAccess } from "@/lib/whop-auth";
+import { memberContext } from "@/lib/member-context";
+import { requireCoachingSlot } from "@/lib/services/entitlements";
 import { apiErrorResponse } from "@/lib/api-errors";
-import { getClientByWhopUserId, updateClientIntake, createOrReactivateClient } from "@/lib/services/clients";
-import { getOrCreateCompany } from "@/lib/services/companies";
+import { updateClientIntake } from "@/lib/services/clients";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,25 +15,8 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo = process.env.NODE_ENV !== "production" && req.nextUrl.searchParams.get("demo") === "true";
-    const auth = await requireClientAccess(expId, isDemo);
-    const userId = auth.userId;
-
-    // Resolve company
-    const targetCompanyId = companyId || "biz_default_coach";
-    const company = await getOrCreateCompany(targetCompanyId);
-    if (!company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
-    }
-
-    // Resolve client
-    let client = await getClientByWhopUserId(company.id, userId);
-    if (!client) {
-      client = await createOrReactivateClient(company.id, userId, expId);
-    }
-
-    if (!client) {
-      return NextResponse.json({ error: "Failed to resolve client record" }, { status: 500 });
-    }
+    const { company, client } = await memberContext(expId, companyId, isDemo);
+    await requireCoachingSlot(company, client.id);
 
     // Update intake data with strict field allowlist
     const updatedClient = await updateClientIntake(company.id, client.id, {

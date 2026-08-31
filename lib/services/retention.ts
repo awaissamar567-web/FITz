@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { Company, Client, ClientStatus } from "@/types/database";
 import { listCheckins } from "@/lib/services/checkins";
+import { requirePro, coachingSlots } from "@/lib/entitlements";
 
 export interface RiskEvaluationResult {
   isAtRisk: boolean;
@@ -65,7 +66,10 @@ export async function syncCompanyAtRiskClients(
   recoveredCount: number;
 }> {
   const { listClients } = await import("@/lib/services/clients");
-  const clients = await listClients(company.id);
+  requirePro(company, "Automated churn queue");
+  const allClients = await listClients(company.id);
+  const selected = new Set(coachingSlots(company, allClients).selectedIds);
+  const clients = allClients.filter(c => selected.has(c.id));
 
   let atRiskCount = 0;
   let recoveredCount = 0;

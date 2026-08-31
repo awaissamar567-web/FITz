@@ -1,7 +1,7 @@
 import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { Company } from "@/types/database";
 import { listClients } from "@/lib/services/clients";
-import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
+import { coachingSlots } from "@/lib/entitlements";
 
 export interface PaywallStatus {
   isCapped: boolean;
@@ -15,29 +15,9 @@ export interface PaywallStatus {
  * Checks whether a company has reached its active client capacity on its current plan tier.
  */
 export async function checkPaywallStatus(company: Company): Promise<PaywallStatus> {
-  if (company.plan === "pro") {
-    const clients = await listClients(company.id);
-    const activeCount = clients.filter((c) => c.status === "active" || c.status === "at_risk").length;
-    return {
-      isCapped: false,
-      plan: "pro",
-      activeCount,
-      limit: Infinity,
-      canAddClient: true,
-    };
-  }
-
-  const clients = await listClients(company.id);
-  const activeCount = clients.filter((c) => c.status === "active" || c.status === "at_risk").length;
-  const isCapped = activeCount >= FREE_TIER_CLIENT_LIMIT;
-
-  return {
-    isCapped,
-    plan: "free",
-    activeCount,
-    limit: FREE_TIER_CLIENT_LIMIT,
-    canAddClient: !isCapped,
-  };
+  const slots = coachingSlots(company, await listClients(company.id));
+  return { ...slots, plan: company.plan, isCapped: slots.activeCount >= slots.limit,
+    canAddClient: slots.activeCount < slots.limit };
 }
 
 /**
@@ -58,6 +38,7 @@ export async function updateCompanyPlan(
     if (!error && data) {
       return data as Company;
     }
+    if (!isMockEnv) throw error || new Error("Subscription update did not persist");
   } catch (err) {
     if (!isMockEnv) throw err;
     console.warn("[Paywall] Remote updateCompanyPlan error, using fallback:", err);

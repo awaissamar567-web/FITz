@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { unwrapWebhook } from "@whop/sdk/helpers";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { createOrReactivateClient, deactivateClient } from "@/lib/services/clients";
 import { updateCompanyPlan } from "@/lib/services/paywall";
@@ -131,11 +131,12 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-      const { data: existingEvent } = await supabaseAdmin
+      const { data: existingEvent, error: lookupError } = await supabaseAdmin
         .from("webhook_events")
         .select("id")
         .eq("whop_event_id", eventId)
         .maybeSingle();
+      if (lookupError && !isMockEnv) throw lookupError;
 
       if (existingEvent) {
         memoryWebhookEvents.add(eventId);
@@ -143,10 +144,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: "Already processed (idempotent)" }, { status: 200 });
       }
     } catch (err) {
+      if (!isMockEnv) throw err;
       console.warn("[Webhook] Remote webhook_events lookup failed, checking memory:", err);
     }
-
-    memoryWebhookEvents.add(eventId);
 
     // Extract relevant data fields
     const data = payload.data || payload;
@@ -227,18 +227,21 @@ export async function POST(req: NextRequest) {
         case "membership_went_invalid":
         case "payment.failed": {
           console.log(`[Webhook] Deactivating client ${whopUserId} for company ${company.id}`);
-          await deactivateClient(company.id, whopUserId);
+          if (!await deactivateClient(company.id, whopUserId)) throw new Error("Membership deactivation did not persist");
           break;
         }
       }
     }
 
     // 3. Record in webhook_events table for permanent idempotency
-    await supabaseAdmin.from("webhook_events").insert({
+    const { error: recordError } = await supabaseAdmin.from("webhook_events").insert({
       whop_event_id: eventId,
       event_type: eventType,
       payload,
     });
+    if (recordError && recordError.code !== "23505") throw recordError;
+    // Cache only successfully applied events so transient failures can be retried.
+    memoryWebhookEvents.add(eventId);
 
     return NextResponse.json({ success: true, eventId, eventType }, { status: 200 });
   } catch (error) {

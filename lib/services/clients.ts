@@ -55,6 +55,7 @@ export async function getClient(
     if (!error && data) {
       return data as Client;
     }
+    if (!isMockEnv) return null;
   } catch (err) {
     if (!isMockEnv) throw err;
     console.warn("[Clients] getClient remote error:", err);
@@ -98,7 +99,8 @@ export async function getClientByWhopUserId(
       return data as Client;
     }
 
-    // Secondary fallback: check by whop_experience_id
+    if (!isMockEnv) return null;
+    // Offline fixture fallback only: check by whop_experience_id
     const { data: expData, error: expErr } = await supabaseAdmin
       .from("clients")
       .select("*")
@@ -176,6 +178,7 @@ export async function listClients(
     if (!error && data && data.length > 0) {
       return data as Client[];
     }
+    if (!isMockEnv) return [];
   } catch (err) {
     if (!isMockEnv) throw err;
     console.warn("[Clients] listClients remote error:", err);
@@ -243,6 +246,7 @@ export async function createOrReactivateClient(
       if (!error && data) {
         return data as Client;
       }
+      if (!isMockEnv) throw error || new Error("Client reactivation did not persist");
     }
 
     // Insert new client
@@ -273,6 +277,11 @@ export async function createOrReactivateClient(
     console.warn("[Clients] createOrReactivateClient fallback:", error);
   }
 
+  if (!isMockEnv) {
+    const concurrent = await getClientByWhopUserId(companyId, whopUserId);
+    if (concurrent) return concurrent;
+    throw new Error("Client could not be saved");
+  }
   const key = `${companyId}:${whopUserId}`;
   memoryClients.set(key, mockClient);
   memoryClients.set(mockClient.id, mockClient);
@@ -352,6 +361,7 @@ export async function updateClientIntake(
     console.warn("[Clients] updateClientIntake remote error, falling back to local:", err);
   }
 
+  if (!isMockEnv) throw new Error("Intake could not be saved");
   const updatedClient: Client = {
     id: clientId,
     company_id: companyId,

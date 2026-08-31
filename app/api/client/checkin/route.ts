@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireClientAccess } from "@/lib/whop-auth";
+import { memberContext } from "@/lib/member-context";
+import { requireCoachingSlot } from "@/lib/services/entitlements";
+import { requirePro } from "@/lib/entitlements";
 import { apiErrorResponse } from "@/lib/api-errors";
-import { getClientByWhopUserId, createOrReactivateClient } from "@/lib/services/clients";
 import { createCheckin, listCheckins } from "@/lib/services/checkins";
-import { getOrCreateCompany } from "@/lib/services/companies";
 
 /**
  * POST: Submit a new check-in
@@ -21,7 +21,10 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo = process.env.NODE_ENV !== "production" && req.nextUrl.searchParams.get("demo") === "true";
-    const auth = await requireClientAccess(targetExpId, isDemo);
+    const { auth, company, client } = await memberContext(targetExpId, companyId, isDemo);
+    const currentCompany = await requireCoachingSlot(company, client.id);
+    if (resolvedPhotoUrl) requirePro(currentCompany, "Progress photos");
+    if (Object.keys(resolvedMacroHit).length > 0) requirePro(currentCompany, "Macro tracking");
     const userId = auth.userId;
 
     const { checkRateLimit } = await import("@/lib/rate-limiter");
@@ -31,23 +34,6 @@ export async function POST(req: NextRequest) {
         status: 429,
         headers: { "Retry-After": String(rateLimit.resetSeconds) },
       });
-    }
-
-    // Resolve company
-    const targetCompanyId = companyId || "biz_default_coach";
-    const company = await getOrCreateCompany(targetCompanyId);
-    if (!company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
-    }
-
-    // Resolve client
-    let client = await getClientByWhopUserId(company.id, userId);
-    if (!client) {
-      client = await createOrReactivateClient(company.id, userId, experienceId);
-    }
-
-    if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
     }
 
     // Create checkin with explicit company_id and client_id binding
@@ -89,18 +75,8 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "20", 10);
 
     const isDemo = process.env.NODE_ENV !== "production" && searchParams.get("demo") === "true";
-    const auth = await requireClientAccess(experienceId, isDemo);
+    const { company, client, auth } = await memberContext(experienceId, companyId, isDemo);
     const userId = auth.userId;
-
-    const company = await getOrCreateCompany(companyId);
-    if (!company) {
-      return NextResponse.json({ error: "Company not found" }, { status: 404 });
-    }
-
-    const client = await getClientByWhopUserId(company.id, userId);
-    if (!client) {
-      return NextResponse.json({ checkins: [] }, { status: 200 });
-    }
 
     // IDOR Protection: Prevent client A from querying client B's ID
     if (targetClientId && targetClientId !== client.id && targetClientId !== client.whop_user_id) {

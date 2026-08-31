@@ -16,6 +16,7 @@ import {
 import { Client, ClientStatus } from "@/types/database";
 
 export interface EnrichedClient extends Client {
+  coachingEnabled?: boolean;
   latestCheckinDate?: string;
   daysSinceLastCheckin?: number | null;
   lastCheckinWeight?: number;
@@ -162,6 +163,7 @@ export function ClientListTable({
                       >
                         {!c.intake_completed ? "Intake Pending" : isAtRisk ? "⚠️ At Risk" : c.status}
                       </span>
+                      {c.coachingEnabled === false && <p className="mt-1 text-3xs text-zinc-400">Coaching paused · history only</p>}
                     </td>
 
                     {/* Last Check-In */}
@@ -193,13 +195,16 @@ export function ClientListTable({
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => onAssignPlan(c)}
-                          className="py-1 px-2.5 rounded-lg bg-white/[0.04] hover:bg-[#1754d8] hover:text-white active:scale-[0.98] text-zinc-300 font-medium text-3xs transition-all flex items-center gap-1"
+                          disabled={c.coachingEnabled === false}
+                          title={c.coachingEnabled === false ? "Enable a coaching slot above to assign workouts" : "Assign a workout to this member"}
+                          className="py-1 px-2.5 rounded-lg bg-white/[0.04] enabled:hover:bg-[#1754d8] enabled:hover:text-white text-zinc-300 font-medium text-3xs transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Dumbbell className="w-3 h-3" />
                           <span>Assign Split</span>
                         </button>
                         <button
                           onClick={() => onSelectClient(c.id)}
+                          aria-label={`View ${displayName}`}
                           className="p-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] active:scale-[0.98] text-zinc-400 hover:text-white transition-colors"
                         >
                           <ChevronRight className="w-3.5 h-3.5" />

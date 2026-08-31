@@ -6,7 +6,8 @@ import { Checkin, Company } from "@/types/database";
 import { RealtimeActivityFeed } from "@/components/coach/RealtimeActivityFeed";
 import { LineTrendChart, LineTrendPoint } from "@/components/coach/LineTrendChart";
 import { CheckCircle2, AlertCircle, ChevronRight, X, ArrowRight, ShieldCheck, Dumbbell, Users } from "lucide-react";
-import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
+import { FREE_TIER_CLIENT_LIMIT, PRO_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
+import { coachingSlots } from "@/lib/entitlements";
 
 interface CoachAnalyticsDashboardProps {
   companyId: string;
@@ -85,21 +86,22 @@ export function CoachAnalyticsDashboard({
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>("30d");
   const [showChecklist, setShowChecklist] = useState(true);
 
-  const activeClients = clients.filter((c) => c.status === "active");
-  const atRiskClients = clients.filter((c) => c.status === "at_risk");
-  const intakeDoneClients = clients.filter((c) => c.intake_completed);
-  const planAssignedClients = clients.filter((c) => c.hasActivePlan);
+  const selectedIds = new Set(company ? coachingSlots(company, clients).selectedIds : []);
+  const coachingClients = clients.filter(c => selectedIds.has(c.id));
+  const atRiskClients = coachingClients.filter((c) => c.status === "at_risk");
+  const intakeDoneClients = coachingClients.filter((c) => c.intake_completed);
+  const planAssignedClients = coachingClients.filter((c) => c.hasActivePlan);
 
   const activeCount = clients.filter((c) => c.status === "active" || c.status === "at_risk").length;
   const intakeCount = intakeDoneClients.length;
   const planCount = planAssignedClients.length;
   const atRiskCount = atRiskClients.length;
-  const pendingIntakeClients = clients.filter((client) => !client.intake_completed && client.status !== "cancelled");
+  const pendingIntakeClients = coachingClients.filter((client) => !client.intake_completed);
   const firstPendingIntake = pendingIntakeClients[0];
   const firstAtRisk = atRiskClients[0];
 
-  const intakePercentage = clients.length > 0 ? Math.round((intakeCount / clients.length) * 100) : 0;
-  const planPercentage = clients.length > 0 ? Math.round((planCount / clients.length) * 100) : 0;
+  const intakePercentage = coachingClients.length > 0 ? Math.round((intakeCount / coachingClients.length) * 100) : 0;
+  const planPercentage = coachingClients.length > 0 ? Math.round((planCount / coachingClients.length) * 100) : 0;
 
   const eligibleClients = clients.filter((c) => c.status === "active" || c.status === "at_risk");
   const earliestTimestamp = Math.min(
@@ -108,10 +110,10 @@ export function CoachAnalyticsDashboard({
     ...checkins.map((checkin) => startOfUtcDay(checkin.date))
   );
   const analyticsBuckets = buildAnalyticsBuckets(timeRange, analyticsAsOf, earliestTimestamp);
-  const eligibleIds = new Set(eligibleClients.map((client) => client.id));
+  const eligibleIds = selectedIds;
 
   const adherenceTrend: LineTrendPoint[] = analyticsBuckets.map((bucket) => {
-    const rosterAtBucketEnd = eligibleClients.filter((client) => startOfUtcDay(client.joined_at) < bucket.end);
+    const rosterAtBucketEnd = coachingClients.filter((client) => startOfUtcDay(client.joined_at) < bucket.end);
     const rosterIds = new Set(rosterAtBucketEnd.map((client) => client.id));
     const checkedInIds = new Set(
       checkins
@@ -229,7 +231,7 @@ export function CoachAnalyticsDashboard({
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div className="space-y-0.5 min-w-0">
                 <span className="text-3xs font-medium text-white block truncate">Workout Split Templates</span>
-                <span className="text-3xs text-emerald-400 font-mono block">4 Pre-built Splits Ready</span>
+                <span className="text-3xs text-emerald-400 font-mono block">{company?.plan === "pro" ? "4 Pre-built Splits Ready" : "Reusable templates · Pro"}</span>
               </div>
             </div>
 
@@ -256,8 +258,8 @@ export function CoachAnalyticsDashboard({
               <div className="flex items-start gap-2.5 min-w-0">
                 <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                 <div className="space-y-0.5 min-w-0">
-                  <span className="text-3xs font-medium text-red-200 block truncate">{atRiskCount} At-Risk Churn Alert{atRiskCount === 1 ? "" : "s"}</span>
-                  <span className="text-3xs text-red-400/90 font-mono block">{firstAtRisk ? `${firstAtRisk.display_name || firstAtRisk.whop_user_id} (${firstAtRisk.daysSinceLastCheckin ?? "—"}d overdue)` : "No at-risk members"}</span>
+                  <span className="text-3xs font-medium text-red-200 block truncate">{company?.plan === "pro" ? `${atRiskCount} At-Risk Churn Alerts` : "Churn alerts · Pro"}</span>
+                  <span className="text-3xs text-red-400/90 font-mono block">{company?.plan === "pro" ? (firstAtRisk ? `${firstAtRisk.display_name || firstAtRisk.whop_user_id} (${firstAtRisk.daysSinceLastCheckin ?? "—"}d overdue)` : "No at-risk members") : "Available with FITz Pro"}</span>
                 </div>
               </div>
               <ChevronRight className="w-3.5 h-3.5 text-red-400 group-hover:translate-x-0.5 transition-transform shrink-0 mt-1" />
@@ -288,11 +290,11 @@ export function CoachAnalyticsDashboard({
               {activeCount}
             </div>
             <span className="text-3xs font-mono text-zinc-500">
-              {company?.plan === "pro" ? "Unlimited" : `Max ${FREE_TIER_CLIENT_LIMIT}`}
+              {company?.plan === "pro" ? `Max ${PRO_TIER_CLIENT_LIMIT} coached` : `Max ${FREE_TIER_CLIENT_LIMIT} coached`}
             </span>
           </div>
           <p className="text-3xs font-normal text-zinc-400">
-            {activeClients.length} members actively logging
+            {coachingClients.length} coaching enabled · {activeCount - coachingClients.length} history only
           </p>
         </div>
 
@@ -312,11 +314,11 @@ export function CoachAnalyticsDashboard({
           <div className="flex items-baseline justify-between">
             <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight">
               {intakeCount}
-              <span className="text-xs text-zinc-500 font-normal"> / {clients.length}</span>
+              <span className="text-xs text-zinc-500 font-normal"> / {coachingClients.length}</span>
             </div>
           </div>
           <p className="text-3xs font-normal text-zinc-400">
-            {clients.length - intakeCount} pending questionnaire
+            {coachingClients.length - intakeCount} awaiting intake in your coaching selection
           </p>
         </div>
 
@@ -336,11 +338,11 @@ export function CoachAnalyticsDashboard({
           <div className="flex items-baseline justify-between">
             <div className="text-2xl sm:text-3xl font-display font-semibold text-white tracking-tight">
               {planCount}
-              <span className="text-xs text-zinc-500 font-normal"> / {clients.length}</span>
+              <span className="text-xs text-zinc-500 font-normal"> / {coachingClients.length}</span>
             </div>
           </div>
           <p className="text-3xs font-normal text-zinc-400">
-            {clients.length - planCount} awaiting workout split
+            {coachingClients.length - planCount} awaiting a split in your coaching selection
           </p>
         </div>
 
@@ -359,14 +361,14 @@ export function CoachAnalyticsDashboard({
           </div>
           <div className="flex items-baseline justify-between">
             <div className="text-2xl sm:text-3xl font-display font-semibold text-amber-300 tracking-tight">
-              {atRiskCount}
+              {company?.plan === "pro" ? atRiskCount : "Pro"}
             </div>
             <span className="text-3xs font-mono text-amber-400/90 font-medium">
               Review Roster
             </span>
           </div>
           <p className="text-3xs font-normal text-zinc-400">
-            {atRiskCount > 0 ? "Requires retention outreach" : "All clients on schedule"}
+            {company?.plan !== "pro" ? "Churn monitoring is a Pro feature" : atRiskCount > 0 ? "Requires retention outreach" : "All clients on schedule"}
           </p>
         </div>
       </div>
@@ -377,7 +379,7 @@ export function CoachAnalyticsDashboard({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LineTrendChart
           title={`Check-In Adherence · ${timeRangeLabels[timeRange]}`}
-          description={`${checkinsInRange} check-ins recorded. Unique active clients per period, measured against the roster available then.`}
+          description={`${checkinsInRange} check-ins from your currently enabled coaching clients. Past periods use today's selection, not historical slot assignments.`}
           points={adherenceTrend}
           color="emerald"
           valueSuffix="%"

@@ -142,6 +142,7 @@ export async function listCheckins(
     if (!error && data && data.length > 0) {
       return withSignedPhotoUrls(data as Checkin[]);
     }
+    if (!isMockEnv) return [];
   } catch (err) {
     if (!isMockEnv) throw err;
     console.warn("[Checkins] Remote listCheckins failed, returning memory list:", err);

@@ -9,6 +9,8 @@ export interface Company {
   at_risk_threshold_days?: number;
   avatar_url?: string | null;
   plan: "free" | "pro";
+  free_client_ids?: string[] | null;
+  pro_client_ids?: string[] | null;
   created_at: string;
 }
 

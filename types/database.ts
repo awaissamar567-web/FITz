@@ -12,6 +12,8 @@ export interface Company {
   at_risk_threshold_days?: number;
   avatar_url?: string | null;
   plan: CompanyPlan;
+  free_client_ids?: string[] | null;
+  pro_client_ids?: string[] | null;
   created_at: string;
 }
 
@@ -67,6 +69,7 @@ export interface Checkin {
   photo_url: string | null;
   macro_hit: MacroAdherence;
   notes: string | null;
+  coach_feedback?: string | null;
   created_at: string;
 }
 

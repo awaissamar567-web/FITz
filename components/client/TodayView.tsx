@@ -8,12 +8,13 @@ import { normalizePlan, FormattedExercise, formatExercise } from "@/lib/utils/fo
 interface TodayViewProps {
   client: Client;
   plan: Plan | null;
+  isPro?: boolean;
   onNavigateToCheckin: () => void;
 }
 
 const DAYS: DayOfWeek[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-export function TodayView({ client, plan: rawPlan, onNavigateToCheckin }: TodayViewProps) {
+export function TodayView({ client, plan: rawPlan, onNavigateToCheckin, isPro = false }: TodayViewProps) {
   const plan = normalizePlan(rawPlan);
 
   const currentDayIndex = new Date().getDay();
@@ -101,7 +102,7 @@ export function TodayView({ client, plan: rawPlan, onNavigateToCheckin }: TodayV
             Log Today’s Check-In
           </h2>
           <p className="text-xs font-normal text-zinc-400 leading-relaxed">
-            Record your morning bodyweight, progress photo, and macro nutrition targets.
+            {isPro ? "Record bodyweight, progress photos, and macro nutrition targets." : "Record your bodyweight and training notes."}
           </p>
         </div>
 
@@ -254,6 +255,7 @@ export function TodayView({ client, plan: rawPlan, onNavigateToCheckin }: TodayV
         )}
       </div>
 
+      {isPro ? <>
       {/* Nutritional Macro & Micronutrient Targets - Frosted UI */}
       <div className="p-4 sm:p-5 rounded-2xl bg-[#0c0c0e]/85 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-3.5">
         <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
@@ -352,6 +354,7 @@ export function TodayView({ client, plan: rawPlan, onNavigateToCheckin }: TodayV
           </div>
         )}
       </div>
+      </> : <p className="rounded-xl bg-darkCard p-4 text-xs text-zinc-400">Nutrition targets are a Pro feature. Previously recorded nutrition history remains in your check-ins.</p>}
     </div>
   );
 }

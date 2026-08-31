@@ -18,6 +18,7 @@ import {
   Camera,
 } from "lucide-react";
 import { PlanAssignmentModal } from "./PlanAssignmentModal";
+import { CoachFeedback } from "./CoachFeedback";
 import { normalizePlan, FormattedExercise } from "@/lib/utils/formatters";
 
 interface ClientProfileModalProps {
@@ -114,14 +115,16 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
 
           <button
             onClick={onClose}
+            aria-label="Close member profile"
             className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white transition-colors border border-white/[0.08]"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
+        {!data?.coachingEnabled && <p className="text-xs text-amber-300">History-only access. Enable this member in Your coaching slots to assign new workouts.</p>}
         {/* Churn Warning if At Risk */}
-        {isAtRisk && (
+        {isAtRisk && data?.isPro && (
           <div className="p-3.5 rounded-xl bg-amber-950/40 border border-amber-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-xs text-amber-300 font-normal">
               <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
@@ -152,6 +155,8 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
 
           <button
             onClick={() => setIsEditingPlan(true)}
+            disabled={data?.coachingEnabled === false}
+            title={data?.coachingEnabled === false ? "Enable a coaching slot in Clients & Roster first" : undefined}
             className="py-2 px-3.5 rounded-xl bg-[#1754d8] hover:bg-[#154ac0] active:scale-[0.98] text-white font-medium text-xs transition-all flex items-center gap-1.5 shadow-md shadow-[#1754d8]/20"
           >
             <PlusCircle className="w-3.5 h-3.5" />
@@ -350,7 +355,7 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
                           {chk.weight} kg
                         </span>
                       )}
-                      {chk.macro_hit && (
+                      {chk.macro_hit && Object.keys(chk.macro_hit).length > 0 && (
                         <span
                           className={`text-3xs font-medium px-2 py-0.5 rounded-md ${
                             chk.macro_hit.hitTarget
@@ -380,49 +385,7 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
                     </div>
                   )}
 
-                  {/* Coach Feedback Section */}
-                  {chk.coach_feedback ? (
-                    <div className="p-3 rounded-xl bg-[#1754d8]/10 border border-[#1754d8]/30 space-y-1">
-                      <div className="flex items-center justify-between text-3xs">
-                        <span className="font-semibold text-[#1754d8] flex items-center gap-1">
-                          <Sparkles className="w-3 h-3" /> Coach Feedback
-                        </span>
-                        <span className="text-zinc-500 font-mono">Reviewed</span>
-                      </div>
-                      <p className="text-xs text-zinc-200 font-normal">
-                        "{chk.coach_feedback}"
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/[0.08] space-y-2">
-                      <div className="flex items-center justify-between text-3xs">
-                        <span className="text-zinc-400 font-medium flex items-center gap-1">
-                          <MessageSquare className="w-3 h-3 text-amber-400" /> Send Coach Feedback
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          placeholder="Reply with guidance (e.g. 'Great PR! Bump weight by 2kg next week')"
-                          id={`coach-feedback-${chk.id}`}
-                          className="flex-1 bg-black/40 border border-white/[0.08] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#1754d8]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const el = document.getElementById(`coach-feedback-${chk.id}`) as HTMLInputElement;
-                            if (el && el.value.trim()) {
-                              chk.coach_feedback = el.value.trim();
-                              setData({ ...data });
-                            }
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#1754d8] hover:bg-[#154ac0] text-white text-xs font-medium shrink-0 transition-colors"
-                        >
-                          Send Note
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  <CoachFeedback companyId={companyId} clientId={client.id} checkinId={chk.id} initialFeedback={chk.coach_feedback} enabled={Boolean(data?.isPro && data?.coachingEnabled)} />
                 </div>
               ))}
             </div>
@@ -435,6 +398,7 @@ export function ClientProfileModal({ companyId, clientId, onClose }: ClientProfi
         <PlanAssignmentModal
           companyId={companyId}
           client={client}
+          isPro={Boolean(data?.isPro)}
           onClose={() => setIsEditingPlan(false)}
           onSuccess={() => {
             setIsEditingPlan(false);

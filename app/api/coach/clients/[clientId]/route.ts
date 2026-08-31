@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { coachingSlots } from "@/lib/entitlements";
+import { listClients } from "@/lib/services/clients";
 import { requireCoachAccess } from "@/lib/whop-auth";
 import { apiErrorResponse } from "@/lib/api-errors";
 import { getOrCreateCompany } from "@/lib/services/companies";
@@ -40,7 +42,8 @@ export async function GET(req: NextRequest, { params }: ParamsProps) {
     const checkins = await listCheckins(company.id, client.id, 50);
     const plan = await getCurrentPlan(company.id, client.id);
 
-    return NextResponse.json({ client, checkins, plan }, { status: 200 });
+    const slots = coachingSlots(company, await listClients(company.id));
+    return NextResponse.json({ client, checkins, plan, isPro: company.plan === "pro", coachingEnabled: slots.selectedIds.includes(client.id) }, { status: 200 });
   } catch (error) {
     return apiErrorResponse(error, "[Coach Single Client API]");
   }

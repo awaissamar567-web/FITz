@@ -6,6 +6,7 @@ import { Client } from "@/types/database";
 
 interface PlanAssignmentModalProps {
   companyId: string;
+  isPro?: boolean;
   client: Client;
   onClose: () => void;
   onSuccess: () => void;
@@ -18,8 +19,8 @@ interface ExerciseItem {
   notes?: string;
 }
 
-export function PlanAssignmentModal({ companyId, client, onClose, onSuccess }: PlanAssignmentModalProps) {
-  const [planName, setPlanName] = useState<string>("4-Day Upper/Lower Hypertrophy");
+export function PlanAssignmentModal({ companyId, client, isPro = false, onClose, onSuccess }: PlanAssignmentModalProps) {
+  const [planName, setPlanName] = useState<string>("Custom Workout");
   const [split, setSplit] = useState<string>("Upper / Lower");
   const [calories, setCalories] = useState<string>("2400");
   const [protein, setProtein] = useState<string>("180");
@@ -28,10 +29,7 @@ export function PlanAssignmentModal({ companyId, client, onClose, onSuccess }: P
   const [coachNotes, setCoachNotes] = useState<string>("Focus on progressive overload on compound lifts. Keep 2 reps in reserve.");
 
   const [exercises, setExercises] = useState<ExerciseItem[]>([
-    { name: "Barbell Incline Bench Press", sets: 3, reps: "8-10", notes: "RPE 8" },
-    { name: "Chest Supported Dumbbell Row", sets: 4, reps: "10-12", notes: "Hold stretch at bottom" },
-    { name: "Standing Overhead DB Press", sets: 3, reps: "10-12", notes: "Full lock" },
-    { name: "Cable Lateral Raises", sets: 3, reps: "15", notes: "Control eccentric" },
+    { name: "", sets: 3, reps: "", notes: "" },
   ]);
 
   const [saving, setSaving] = useState(false);
@@ -60,13 +58,9 @@ export function PlanAssignmentModal({ companyId, client, onClose, onSuccess }: P
       const payload = {
         companyId,
         clientId: client.id,
-        name: planName.trim(),
-        split: split.trim(),
-        calories: calories ? parseInt(calories) : undefined,
-        protein: protein ? parseInt(protein) : undefined,
-        carbs: carbs ? parseInt(carbs) : undefined,
-        fats: fats ? parseInt(fats) : undefined,
-        notes: coachNotes.trim() || undefined,
+        split_name: planName.trim(),
+        macros: isPro ? { calories: Number(calories), protein: Number(protein), carbs: Number(carbs), fat: Number(fats) } : undefined,
+        schedule: [{ day: "Monday", splitName: split.trim(), notes: coachNotes.trim(), exercises: exercises.filter(ex => ex.name.trim()) }],
         exercises: exercises.filter((ex) => ex.name.trim().length > 0),
       };
 
@@ -220,6 +214,7 @@ export function PlanAssignmentModal({ companyId, client, onClose, onSuccess }: P
             </div>
           </div>
 
+          {isPro ? <>
           {/* Daily Nutritional Macro Targets */}
           <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
             <div className="flex items-center gap-2 text-white font-medium border-b border-white/[0.04] pb-2">
@@ -281,6 +276,8 @@ export function PlanAssignmentModal({ companyId, client, onClose, onSuccess }: P
               </div>
             </div>
           </div>
+
+          </> : <p className="text-xs text-zinc-400">Macro targets are included with FITz Pro. You can save a custom workout on Free.</p>}
 
           {/* Coach Notes */}
           <div>

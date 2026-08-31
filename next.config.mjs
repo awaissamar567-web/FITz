@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Keep isolated development tests from overwriting the production build cache.
+  distDir: process.env.FITZ_BUILD_DIR || ".next",
   async headers() {
     return [
       {

@@ -70,10 +70,10 @@ export default function DiscoverPage() {
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Up to 3 Active Clients
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> 7-Day Routine Builder & Macros
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Custom 7-Day Workout Builder
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Client Progress Tracking
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Weight Check-Ins & Training Notes
               </li>
             </ul>
           </div>
@@ -84,20 +84,23 @@ export default function DiscoverPage() {
             </div>
             <div>
               <span className="text-xs font-semibold text-[#3b82f6] uppercase tracking-wider">FITz Pro</span>
-              <div className="text-2xl font-bold text-white mt-1">$29 <span className="text-xs font-normal text-zinc-400">/ month</span></div>
+              <div className="text-sm font-medium text-white mt-1">See current price at Whop checkout</div>
             </div>
             <ul className="space-y-2 text-xs text-zinc-200">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Unlimited Active Clients
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Up to 250 Active Coaching Clients
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Reusable Templates (Save 6+ hrs/wk)
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Reusable 7-Day Program Templates
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> 4-Tier Churn Queue & 1-Click Whop DM
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Full Photo Archive & Coach Feedback Loop
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Nutrition Targets & Macro Tracking
               </li>
             </ul>
           </div>

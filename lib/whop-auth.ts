@@ -123,7 +123,7 @@ export async function evaluateWhopAccess(
 export async function requireCoachAccess(companyId: string, allowDemo = false): Promise<AuthContext> {
   const identity = await requestIdentity(companyId, "coach", allowDemo);
   const access = await evaluateWhopAccess(identity.userId, companyId, identity.testAccess);
-  if (access.access_level !== "admin") throw new WhopAuthError("Forbidden: Admin access required", 403);
+  if (!access.has_access || access.access_level !== "admin") throw new WhopAuthError("Forbidden: Admin access required", 403);
   return { userId: identity.userId, companyId, accessLevel: "admin", hasAccess: true };
 }
 

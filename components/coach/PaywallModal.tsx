@@ -32,6 +32,7 @@ export function PaywallModal({
   const [step, setStep] = useState<"upgrade_card" | "checkout">("upgrade_card");
   const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
 
   const directCheckoutUrl =
     process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL ||
@@ -51,7 +52,8 @@ export function PaywallModal({
     const handleMessage = async (event: MessageEvent) => {
       let trustedWhopOrigin = false;
       try {
-        trustedWhopOrigin = new URL(event.origin).hostname.endsWith("whop.com");
+        const host = new URL(event.origin).hostname;
+        trustedWhopOrigin = host === "whop.com" || host.endsWith(".whop.com");
       } catch {}
       if (
         trustedWhopOrigin &&
@@ -59,6 +61,14 @@ export function PaywallModal({
         (trustedWhopOrigin && event.data?.action === "membership.activated") ||
         (trustedWhopOrigin && event.data?.event === "checkout.completed")
       ) {
+        try {
+          const response = await fetch(`/api/coach/clients?companyId=${encodeURIComponent(companyId)}`, { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok || result.paywallStatus?.plan !== "pro") {
+            setVerificationMessage("Payment confirmation is still processing. Refresh after confirmation; Pro unlocks only when the server confirms it.");
+            return;
+          }
+        } catch { setVerificationMessage("Could not verify your subscription. Refresh to check again."); return; }
         setIsSuccess(true);
 
         setTimeout(() => {
@@ -116,6 +126,7 @@ export function PaywallModal({
           </div>
         </div>
 
+        {verificationMessage && <p role="status" className="p-4 text-xs text-amber-200">{verificationMessage}</p>}
         {/* Modal Body */}
         {isSuccess ? (
           /* Success Screen */
@@ -126,7 +137,7 @@ export function PaywallModal({
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-white tracking-tight">Welcome to FITz Pro!</h3>
               <p className="text-xs text-zinc-400 max-w-xs">
-                Your subscription has been activated. Unlimited client roster and real-time retention analytics are now unlocked.
+                Your subscription has been activated. Up to 250 coaching clients and Pro tools are now unlocked.
               </p>
             </div>
           </div>
@@ -145,17 +156,6 @@ export function PaywallModal({
               </p>
             </div>
 
-            {/* ROI Value Callout */}
-            <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 flex items-start gap-2.5 text-xs text-emerald-300">
-              <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <span className="font-semibold text-emerald-200 block text-3xs uppercase tracking-wider">High-ROI Coaching Investment</span>
-                <p className="text-3xs text-emerald-300/90 leading-relaxed">
-                  Retaining just <strong>one coaching client</strong> for an extra month pays for FITz Pro 4x over.
-                </p>
-              </div>
-            </div>
-
             {/* Pricing Card Hero Box */}
             <div className="rounded-xl border border-white/[0.08] bg-[#121215] p-4 flex items-center justify-between">
               <div className="space-y-0.5">
@@ -164,8 +164,8 @@ export function PaywallModal({
                 <div className="text-3xs text-zinc-500">Billed monthly through Whop • Cancel anytime</div>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-white tracking-tight">$25</div>
-                <div className="text-3xs text-zinc-400">/ month</div>
+                <div className="text-sm font-semibold text-white tracking-tight">See price at checkout</div>
+                <div className="text-3xs text-zinc-400">Secure Whop checkout</div>
               </div>
             </div>
 
@@ -177,7 +177,7 @@ export function PaywallModal({
               <ul className="space-y-2.5 text-xs text-zinc-200 font-normal">
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Save 6+ Hours/Week</strong> with reusable 7-day program templates (PPL, Upper/Lower)</span>
+                  <span><strong className="font-medium text-white">Reusable Program Library</strong> with reusable 7-day program templates (PPL, Upper/Lower)</span>
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -189,7 +189,7 @@ export function PaywallModal({
                 </li>
                 <li className="flex items-center gap-2.5">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong className="font-medium text-white">Unlimited Active Clients</strong> — scale from 5 to 500+ members with zero caps</span>
+                  <span><strong className="font-medium text-white">Up to 250 Active Coaching Clients</strong> — choose your roster without losing member history</span>
                 </li>
               </ul>
             </div>
@@ -201,12 +201,12 @@ export function PaywallModal({
                 onClick={() => setStep("checkout")}
                 className="w-full py-3.5 px-4 rounded-xl bg-[#1a68ff] hover:bg-[#1556d6] active:scale-[0.98] text-white font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-[#1a68ff]/25 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Upgrade to FITz Pro — $25/mo</span>
+                <span>View FITz Pro on Whop</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <div className="text-center">
                 <span className="text-3xs text-zinc-500">
-                  Instant activation via secure Whop Inline Checkout
+                  Secure Whop checkout · activation after payment confirmation
                 </span>
               </div>
             </div>
@@ -228,4 +228,3 @@ export function PaywallModal({
     </div>
   );
 }
-

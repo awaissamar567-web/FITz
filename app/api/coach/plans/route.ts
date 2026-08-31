@@ -4,8 +4,9 @@ import { apiErrorResponse } from "@/lib/api-errors";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { getClient } from "@/lib/services/clients";
 import { savePlan, getCurrentPlan } from "@/lib/services/plans";
-import { checkPaywallStatus } from "@/lib/services/paywall";
-import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
+
+import { requireCoachingSlot } from "@/lib/services/entitlements";
+import { requirePro } from "@/lib/entitlements";
 import { ExerciseItem, MacroTargets } from "@/types/database";
 
 export async function POST(req: NextRequest) {
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { companyId, clientId, split_name, exercises, macros, schedule, pdf_url } = body || {};
+    const { companyId, clientId, split_name, exercises, macros, schedule, pdf_url, template_id } = body || {};
 
     if (!companyId || !clientId) {
       return NextResponse.json({ error: "Missing companyId or clientId" }, { status: 400 });
@@ -38,27 +39,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Client not found under this company" }, { status: 404 });
     }
 
-    // Paywall Check: active-client cap on Free Tier
+    const currentCompany = await requireCoachingSlot(company, client.id);
     const existingPlan = await getCurrentPlan(company.id, client.id);
-    const paywall = await checkPaywallStatus(company);
-
-    if (company.plan === "free" && paywall.activeCount > FREE_TIER_CLIENT_LIMIT && !existingPlan) {
-      return NextResponse.json(
-        {
-          error: `Free tier client limit reached (${FREE_TIER_CLIENT_LIMIT}/${FREE_TIER_CLIENT_LIMIT} active clients). Upgrade to Pro for unlimited clients.`,
-          paywall_required: true,
-          limit: FREE_TIER_CLIENT_LIMIT,
-          activeCount: paywall.activeCount,
-        },
-        { status: 402 }
-      );
-    }
+    if (template_id) requirePro(currentCompany, "Reusable program templates");
+    if (macros != null) requirePro(currentCompany, "Macro targets");
 
     // Save/Update plan
     const plan = await savePlan(company.id, client.id, {
       split_name: split_name || "Custom Split",
       exercises: (exercises as ExerciseItem[]) || [],
-      macros: (macros as MacroTargets) || { calories: 2000, protein: 150, carbs: 200, fat: 65 },
+      // Omitted targets preserve history after downgrade.
+      macros: (macros as MacroTargets) || existingPlan?.macros || { calories: 0, protein: 0, carbs: 0, fat: 0 },
       schedule: schedule || undefined,
       pdf_url: pdf_url || undefined,
     });

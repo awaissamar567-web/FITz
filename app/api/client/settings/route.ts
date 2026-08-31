@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireClientAccess } from "@/lib/whop-auth";
+import { memberContext } from "@/lib/member-context";
 import { apiErrorResponse } from "@/lib/api-errors";
-import { getClient, getClientByWhopUserId, updateClientSettings } from "@/lib/services/clients";
+import { updateClientSettings } from "@/lib/services/clients";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,20 +13,14 @@ export async function POST(req: NextRequest) {
     }
 
     const isDemo = process.env.NODE_ENV !== "production" && req.nextUrl.searchParams.get("demo") === "true";
-    const auth = await requireClientAccess(experienceId, isDemo);
-
-    let client = await getClientByWhopUserId(companyId, auth.userId);
-    if (!client && isDemo && clientId) client = await getClient(companyId, clientId);
-    if (!client) {
-      return NextResponse.json({ error: "Client not found" }, { status: 404 });
-    }
+    const { company, client } = await memberContext(experienceId, companyId, isDemo);
 
     const updates: any = {};
     if (display_name !== undefined) updates.display_name = display_name;
     if (units_preference !== undefined) updates.units_preference = units_preference;
     if (avatar_url !== undefined) updates.avatar_url = avatar_url;
 
-    const updatedClient = await updateClientSettings(companyId, client.id, updates);
+    const updatedClient = await updateClientSettings(company.id, client.id, updates);
 
     return NextResponse.json({ success: true, client: updatedClient }, { status: 200 });
   } catch (error) {

@@ -7,10 +7,12 @@ interface CheckinFormProps {
   clientId: string;
   companyId: string;
   experienceId?: string;
+  isPro?: boolean;
+  coachingEnabled?: boolean;
   onCheckinComplete: () => void;
 }
 
-export function CheckinForm({ clientId, companyId, experienceId, onCheckinComplete }: CheckinFormProps) {
+export function CheckinForm({ clientId, companyId, experienceId, onCheckinComplete, isPro = false, coachingEnabled = true }: CheckinFormProps) {
   const [weight, setWeight] = useState<string>("");
   const [hitMacros, setHitMacros] = useState<boolean>(true);
   const [calories, setCalories] = useState<string>("");
@@ -44,6 +46,7 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!coachingEnabled) { setError("Your coach needs to enable a coaching slot before you can check in."); return; }
     if (!weight) {
       setError("Please enter your current weight.");
       return;
@@ -56,7 +59,7 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
       let photoUrl: string | null = null;
 
       // 1. Upload photos to private storage; never persist base64 blobs in Postgres.
-      if (selectedFile) {
+      if (isPro && selectedFile) {
         const upload = new FormData();
         upload.append("file", selectedFile);
         upload.append("experienceId", experienceId || "exp_default");
@@ -74,14 +77,14 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
         clientId,
         weight: parseFloat(weight),
         photo_url: photoUrl,
-        macro_hit: {
+        macro_hit: isPro ? {
           hitTarget: hitMacros,
           calories: calories ? parseInt(calories) : undefined,
           protein: protein ? parseInt(protein) : undefined,
           sodium: sodium ? parseInt(sodium) : undefined,
           sugar: sugar ? parseInt(sugar) : undefined,
           fiber: fiber ? parseInt(fiber) : undefined,
-        },
+        } : undefined,
         notes: notes.trim() || undefined,
         date: new Date().toISOString().split("T")[0],
       };
@@ -119,6 +122,7 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        <fieldset disabled={!coachingEnabled || submitting} className="space-y-4">
         {/* Weight Field */}
         <div>
           <label className="block text-3xs font-medium uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
@@ -136,6 +140,7 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
           />
         </div>
 
+        {isPro ? <>
         {/* Macros Adherence Toggle */}
         <div className="space-y-1.5">
           <label className="block text-3xs font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -255,6 +260,8 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
           </div>
         </div>
 
+        </> : <p className="rounded-xl bg-white/[0.03] p-3 text-xs text-zinc-400">Your check-in includes weight and training notes. Progress photos and macro tracking are available when your coach uses FITz Pro.</p>}
+
         {/* Reflection Notes */}
         <div>
           <label className="block text-3xs font-medium uppercase tracking-wider text-slate-400 mb-1 flex items-center gap-1.5">
@@ -274,7 +281,7 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
         <div className="sticky bottom-3 z-20 -mx-2 rounded-2xl border border-white/[0.08] bg-[#0c0c0e]/95 p-2 shadow-2xl shadow-black/50 backdrop-blur-xl sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !coachingEnabled}
             className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#1754d8] px-4 py-2.5 text-xs font-medium text-white shadow-md shadow-[#1754d8]/25 transition-[background-color,transform,opacity] duration-150 hover:bg-[#154ac0] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? (
@@ -284,6 +291,7 @@ export function CheckinForm({ clientId, companyId, experienceId, onCheckinComple
             )}
           </button>
         </div>
+        </fieldset>
       </form>
     </div>
   );

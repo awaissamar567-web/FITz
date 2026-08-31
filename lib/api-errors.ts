@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
 import { WhopAuthError } from "@/lib/whop-auth";
+import { EntitlementError } from "@/lib/entitlements";
 
 /**
  * Preserve the HTTP meaning of authentication failures without leaking
  * credential details. Unexpected exceptions remain generic 500 responses.
  */
 export function apiErrorResponse(error: unknown, context: string) {
+  if (error instanceof SyntaxError) {
+    return NextResponse.json({ error: "Invalid JSON request" }, { status: 400 });
+  }
+  if (error instanceof EntitlementError) {
+    return NextResponse.json({ error: error.message, code: error.code, paywall_required: error.status === 402 }, { status: error.status });
+  }
   if (error instanceof WhopAuthError) {
     console.warn(`${context} ${error.status}:`, error.message);
     return NextResponse.json(

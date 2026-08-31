@@ -9,6 +9,8 @@
 
 # next.js
 /.next/
+/.next-test/
+/.test-artifacts/
 /out/
 
 # production

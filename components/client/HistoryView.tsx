@@ -76,7 +76,7 @@ export function HistoryView({ client, experienceId }: HistoryViewProps) {
                       {chk.weight} kg
                     </span>
                   )}
-                  {chk.macro_hit && (
+                  {chk.macro_hit && Object.keys(chk.macro_hit).length > 0 && (
                     <span
                       className={`text-3xs font-medium px-2 py-0.5 rounded-md ${
                         chk.macro_hit.hitTarget
@@ -90,6 +90,7 @@ export function HistoryView({ client, experienceId }: HistoryViewProps) {
                 </div>
               </div>
 
+              {chk.coach_feedback && <div className="rounded-xl bg-blue-950/20 p-3 space-y-1"><p className="text-3xs font-semibold text-blue-300">Coach feedback</p><p className="text-xs text-white whitespace-pre-wrap">{chk.coach_feedback}</p></div>}
               {chk.notes && (
                 <div className="p-3 rounded-xl bg-[#111111]/90 border border-white/[0.06]">
                   <p className="text-xs text-slate-300 leading-relaxed italic font-normal">
