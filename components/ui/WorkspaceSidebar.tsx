@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { ChevronLeft, ExternalLink, type LucideIcon } from "lucide-react";
+import { ChevronLeft, type LucideIcon } from "lucide-react";
 
 interface SidebarItem {
   label: string;
@@ -18,12 +18,13 @@ interface WorkspaceSidebarProps {
   view: "coach" | "member";
   name: string;
   detail: string;
+  avatarUrl?: string | null;
   items: SidebarItem[];
   footer: (collapsed: boolean) => ReactNode;
 }
 
 /** Shared desktop navigation. Mobile keeps its existing bottom navigation. */
-export function WorkspaceSidebar({ view, name, detail, items, footer }: WorkspaceSidebarProps) {
+export function WorkspaceSidebar({ view, name, detail, avatarUrl, items, footer }: WorkspaceSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const storageKey = `fitz:${view}:sidebar-collapsed`;
   const menuId = `${view}-sidebar-menu`;
@@ -70,6 +71,7 @@ export function WorkspaceSidebar({ view, name, detail, items, footer }: Workspac
         </div>
         {!collapsed && (
           <div className="space-y-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-3.5">
+            {avatarUrl && <img src={avatarUrl} alt={`${name} profile`} className="mb-2 h-10 w-10 rounded-xl object-cover" />}
             <p className="truncate text-xs font-medium text-white" title={name}>{name}</p>
             <p className="truncate text-3xs font-mono text-zinc-500" title={detail}>{detail}</p>
           </div>
@@ -101,17 +103,6 @@ export function WorkspaceSidebar({ view, name, detail, items, footer }: Workspac
 
       <div className="shrink-0 space-y-3 border-t border-white/[0.06] pt-4">
         {footer(collapsed)}
-        <a
-          href="https://whop.com/hub/"
-          target="_blank"
-          rel="noreferrer"
-          aria-label="Whop Hub (opens in new tab)"
-          title={collapsed ? "Whop Hub (opens in new tab)" : undefined}
-          className={`flex min-h-11 items-center rounded-xl text-3xs text-zinc-400 hover:bg-white/[0.03] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fitzBtn ${collapsed ? "justify-center" : "justify-between px-2.5"}`}
-        >
-          <span className={collapsed ? "sr-only" : undefined}>Whop Hub</span>
-          <ExternalLink aria-hidden="true" className="h-4 w-4 shrink-0" />
-        </a>
       </div>
     </aside>
   );

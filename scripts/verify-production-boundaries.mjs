@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import * as crypto from "node:crypto";
 
 // Execute actual modules with production flags and isolated dependency doubles.
 // No credentials, network, database writes, or live Whop payments are used.
@@ -91,9 +92,11 @@ await assert.rejects(() => payment.updateCompanyPlan("biz_actual", "pro"), /data
 check(true, "production subscription database failure cannot report success via mock fallback");
 let updates = 0;
 let recorded = false;
+const billing = moduleUnderTest("lib/billing-checkout.ts", { "node:crypto": crypto }, { WHOP_WEBHOOK_SECRET: "mock-test-secret" });
 const webhook = moduleUnderTest("app/api/webhooks/whop/route.ts", {
   "next/server": { NextResponse: { json: (data, options) => ({ data, status: options.status }) } },
   crypto: {},
+  "@/lib/billing-checkout": billing,
   "@whop/sdk/helpers": { unwrapWebhook: body => JSON.parse(body) },
   "@/lib/supabase/admin": { isMockEnv: false, supabaseAdmin: { from: () => ({
     select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: recorded ? { id: "event" } : null, error: null }) }) }),
@@ -102,10 +105,10 @@ const webhook = moduleUnderTest("app/api/webhooks/whop/route.ts", {
   "@/lib/services/companies": { getOrCreateCompany: async () => tenant },
   "@/lib/services/clients": {},
   "@/lib/services/paywall": { updateCompanyPlan: async () => { if (++updates === 1) throw new Error("Simulated transient write failure"); return tenant; } },
-}, { WHOP_WEBHOOK_SECRET: "mock-test-secret" });
+}, { WHOP_WEBHOOK_SECRET: "mock-test-secret", WHOP_PRO_PLAN_ID: "plan_fitz_pro" });
 // Only request parsing is doubled here; unsigned HTTP webhook rejection is covered
 // by verify-entitlements.mjs. This isolates retry/idempotency after a write failure.
-const webhookReq = { text: async () => JSON.stringify({ id: "evt_retry", action: "payment.failed", data: { company_id: "biz_actual", plan_id: "plan_fitz_pro" } }), headers: new Headers() };
+const webhookReq = { text: async () => JSON.stringify({ id: "evt_retry", action: "payment.failed", data: { company_id: "biz_seller", plan_id: "plan_fitz_pro", metadata: billing.checkoutMetadata("biz_actual", "plan_fitz_pro") } }), headers: new Headers() };
 check((await webhook.POST(webhookReq)).status === 500 && !recorded, "failed subscription write remains unacknowledged for retry");
 check((await webhook.POST(webhookReq)).status === 200 && updates === 2 && recorded, "same webhook retries its failed write successfully");
 check((await webhook.POST(webhookReq)).status === 200 && updates === 2, "successfully applied duplicate webhook does not repeat subscription write");

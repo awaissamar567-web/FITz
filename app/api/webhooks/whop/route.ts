@@ -5,6 +5,7 @@ import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { getOrCreateCompany } from "@/lib/services/companies";
 import { createOrReactivateClient, deactivateClient } from "@/lib/services/clients";
 import { updateCompanyPlan } from "@/lib/services/paywall";
+import { checkoutCompany } from "@/lib/billing-checkout";
 
 /**
  * Verifies Whop webhook signature using Standard Webhooks HMAC-SHA256 specification.
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest) {
 
     // Extract relevant data fields
     const data = payload.data || payload;
-    const whopCompanyId =
+    let whopCompanyId =
       payload.company_id ||
       data.company_id ||
       data.company?.id ||
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
     const whopPlanId = data.plan_id || data.plan?.id;
     const whopProductId = data.product_id || data.product?.id;
 
-    const isFitzProSubscription =
+    const isFitzProSubscription = isMockEnv ? (
       data.is_app_subscription === true ||
       whopProductId === "fitz_pro" ||
       whopPlanId === "plan_fitz_pro" ||
@@ -174,7 +175,19 @@ export async function POST(req: NextRequest) {
         (whopPlanId === process.env.WHOP_PRO_PLAN_ID ||
           whopProductId === process.env.WHOP_PRO_PLAN_ID)) ||
       (Boolean(process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID) &&
-        whopProductId === process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID);
+        whopProductId === process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID)
+    ) : Boolean(process.env.WHOP_PRO_PLAN_ID && whopPlanId === process.env.WHOP_PRO_PLAN_ID);
+
+    if (isFitzProSubscription && !isMockEnv) {
+      // The event company is the seller. Only signed checkout metadata identifies
+      // the purchasing workspace; never grant the seller Pro as a fallback.
+      const target = checkoutCompany(data.metadata || data.membership?.metadata, whopPlanId);
+      if (!target) {
+        console.error("[Webhook] Pro payment is missing a verified workspace binding");
+        return NextResponse.json({ error: "Pro checkout workspace could not be verified" }, { status: 422 });
+      }
+      whopCompanyId = target;
+    }
 
     if (!whopCompanyId) {
       // Record event as received and acknowledge

@@ -8,6 +8,7 @@ import { savePlan, getCurrentPlan } from "@/lib/services/plans";
 import { requireCoachingSlot } from "@/lib/services/entitlements";
 import { requirePro } from "@/lib/entitlements";
 import { ExerciseItem, MacroTargets } from "@/types/database";
+import { isWorkoutDocumentPath } from "@/lib/services/workout-documents";
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,6 +44,9 @@ export async function POST(req: NextRequest) {
     const existingPlan = await getCurrentPlan(company.id, client.id);
     if (template_id) requirePro(currentCompany, "Reusable program templates");
     if (macros != null) requirePro(currentCompany, "Macro targets");
+    if (pdf_url !== undefined && pdf_url !== null && !isWorkoutDocumentPath(pdf_url, company.id, client.id)) {
+      return NextResponse.json({ error: "Upload the PDF for this member before saving the routine" }, { status: 400 });
+    }
 
     // Save/Update plan
     const plan = await savePlan(company.id, client.id, {
@@ -51,7 +55,7 @@ export async function POST(req: NextRequest) {
       // Omitted targets preserve history after downgrade.
       macros: (macros as MacroTargets) || existingPlan?.macros || { calories: 0, protein: 0, carbs: 0, fat: 0 },
       schedule: schedule || undefined,
-      pdf_url: pdf_url || undefined,
+      pdf_url: pdf_url,
     });
 
     return NextResponse.json({ success: true, plan }, { status: 200 });

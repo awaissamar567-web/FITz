@@ -6,6 +6,7 @@ import { listPlans } from "@/lib/services/plans";
 import { AccessDenied } from "@/components/AccessDenied";
 import { CoachDashboard } from "@/components/coach/CoachDashboard";
 import { EnrichedClient } from "@/components/coach/ClientListTable";
+import { withCoachAvatar } from "@/lib/services/coach-profile";
 
 interface DashboardPageProps {
   params: Promise<{
@@ -84,7 +85,7 @@ export default async function CoachDashboardPage({ params }: DashboardPageProps)
   return (
     <CoachDashboard
       companyId={companyId}
-      company={company}
+      company={await withCoachAvatar(company)}
       initialClients={enrichedClients}
       initialFeed={initialFeed}
       initialCheckins={tenantCheckins}

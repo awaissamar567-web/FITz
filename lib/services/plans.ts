@@ -1,5 +1,6 @@
 import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 import { Plan, ExerciseItem, MacroTargets } from "@/types/database";
+import { withWorkoutDocument } from "@/lib/services/workout-documents";
 
 const globalWithPlans = globalThis as typeof globalThis & {
   __fitz_memory_plans?: Map<string, Plan>;
@@ -61,7 +62,7 @@ export async function getCurrentPlan(
 
     if (error && !isMockEnv) throw error;
     if (!error && data) {
-      return data as Plan;
+      return withWorkoutDocument(data as Plan);
     }
     if (!isMockEnv) return null;
   } catch (err) {
@@ -78,7 +79,7 @@ export async function getCurrentPlan(
       plan.client_id === clientId ||
       clMatch(plan.client_id, clientId);
     if (compMatches && clientMatches) {
-      return plan;
+      return withWorkoutDocument(plan);
     }
   }
   return null;

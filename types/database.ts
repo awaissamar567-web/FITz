@@ -7,6 +7,10 @@ export interface Company {
   id: string;
   whop_company_id: string;
   coach_name: string | null;
+  coach_years_experience?: number | null;
+  coach_expertise?: string | null;
+  coach_avatar_path?: string | null;
+  coach_onboarded_at?: string | null;
   default_checkin_frequency: CheckinFrequency;
   units: UnitSystem;
   at_risk_threshold_days?: number;

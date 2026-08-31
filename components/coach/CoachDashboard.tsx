@@ -43,6 +43,8 @@ import { coachingSlots } from "@/lib/entitlements";
 import { CoachingSlots } from "./CoachingSlots";
 import { ProFeature } from "./ProFeature";
 import { WorkspaceSidebar } from "@/components/ui/WorkspaceSidebar";
+import { CoachOnboarding, CoachProfileForm } from "./CoachProfileForm";
+import { hasCoachProfile } from "@/lib/coach-profile";
 
 interface CoachDashboardProps {
   companyId: string;
@@ -83,7 +85,6 @@ export function CoachDashboard({
   const [retentionFilter, setRetentionFilter] = useState<"all" | "overdue" | "intake" | "plan">("all");
 
   // Coach Settings Form State
-  const [coachName, setCoachName] = useState(company?.coach_name || "");
   const [units, setUnits] = useState<"kg" | "lbs">(company?.units || "kg");
   const [checkinFrequency, setCheckinFrequency] = useState<"daily" | "weekly">(company?.default_checkin_frequency || "weekly");
   const [atRiskThreshold, setAtRiskThreshold] = useState<number>(company?.at_risk_threshold_days || 7);
@@ -150,7 +151,6 @@ export function CoachDashboard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           companyId,
-          coach_name: coachName.trim(),
           units,
           default_checkin_frequency: checkinFrequency,
           at_risk_threshold_days: atRiskThreshold,
@@ -181,6 +181,10 @@ export function CoachDashboard({
     }
   };
 
+  if (company && !hasCoachProfile(company)) {
+    return <CoachOnboarding company={company} onSaved={setCompany} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#111111] text-zinc-100 flex flex-col md:flex-row font-sans selection:bg-[#1754d8]/30 selection:text-white">
       {/* Toast Notification Container */}
@@ -192,7 +196,8 @@ export function CoachDashboard({
       <WorkspaceSidebar
         view="coach"
         name={company?.coach_name || "Coach workspace"}
-        detail={companyId}
+        detail={company?.coach_expertise ? `${company.coach_years_experience ?? 0} years · ${company.coach_expertise}` : companyId}
+        avatarUrl={company?.avatar_url}
         items={[
           { label: "Dashboard", icon: LayoutDashboard, active: activeTab === "dashboard", onClick: () => setActiveTab("dashboard") },
           { label: "Clients & Roster", icon: Users, active: activeTab === "clients", badge: activeCount, onClick: () => setActiveTab("clients") },
@@ -602,6 +607,11 @@ export function CoachDashboard({
               <h2 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">Coach Settings</h2>
             </div>
 
+            {company && <section className="space-y-5 rounded-2xl border border-white/[0.08] bg-darkCard p-5 sm:p-6">
+              <h3 className="font-display text-sm font-semibold text-white">Your coaching profile</h3>
+              <CoachProfileForm company={company} onSaved={setCompany} />
+            </section>}
+
             <form onSubmit={handleSaveSettings} className="space-y-6">
               {/* Section 1: Coaching Defaults */}
               <div className="p-5 sm:p-6 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-4">
@@ -699,29 +709,6 @@ export function CoachDashboard({
                     <span>7 days (Recommended)</span>
                     <span>14 days (Relaxed)</span>
                   </div>
-                </div>
-              </div>
-
-              {/* Section 2: Coach Profile & Branding */}
-              <div className="p-5 sm:p-6 rounded-2xl bg-[#0c0c0e]/80 backdrop-blur-xl border border-white/[0.08] shadow-lg shadow-black/40 space-y-4">
-                <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
-                  <User className="w-4 h-4 text-[#1754d8]" />
-                  <h3 className="text-sm font-display font-semibold text-white">Profile & Branding</h3>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="block text-3xs font-medium uppercase tracking-wider text-zinc-400">
-                    Display Name / Coaching Business Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={coachName}
-                    onChange={(e) => setCoachName(e.target.value)}
-                    placeholder="Your coaching name"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] text-white text-xs font-normal focus:outline-none focus:ring-1 focus:ring-[#1754d8]"
-                  />
-                  <p className="text-3xs text-zinc-500 font-normal">This name is displayed to your clients across their portal views.</p>
                 </div>
               </div>
 

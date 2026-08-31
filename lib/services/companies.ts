@@ -1,18 +1,7 @@
 import { isMockEnv, supabaseAdmin } from "@/lib/supabase/admin";
 
-export interface Company {
-  id: string;
-  whop_company_id: string;
-  coach_name: string | null;
-  default_checkin_frequency: "daily" | "weekly";
-  units: "kg" | "lbs";
-  at_risk_threshold_days?: number;
-  avatar_url?: string | null;
-  plan: "free" | "pro";
-  free_client_ids?: string[] | null;
-  pro_client_ids?: string[] | null;
-  created_at: string;
-}
+import type { Company } from "@/types/database";
+export type { Company } from "@/types/database";
 
 const memoryCompanies = new Map<string, Company>();
 
@@ -107,7 +96,7 @@ export async function getOrCreateCompany(
  */
 export async function updateCompanySettings(
   whopCompanyId: string,
-  updates: Partial<Pick<Company, "coach_name" | "default_checkin_frequency" | "units" | "at_risk_threshold_days" | "avatar_url">>
+  updates: Partial<Pick<Company, "coach_name" | "default_checkin_frequency" | "units" | "at_risk_threshold_days" | "avatar_url" | "coach_years_experience" | "coach_expertise" | "coach_avatar_path" | "coach_onboarded_at">>
 ): Promise<Company | null> {
   const { data, error } = await supabaseAdmin
     .from("companies")

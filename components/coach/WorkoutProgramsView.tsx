@@ -105,6 +105,12 @@ export function WorkoutProgramsView({
   // PDF Routine Upload State
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pdfFile) return;
+    const preview = URL.createObjectURL(pdfFile);
+    setPdfUrl(preview);
+    return () => URL.revokeObjectURL(preview);
+  }, [pdfFile]);
 
   // Status state & Toast notification
   const [loadingPlan, setLoadingPlan] = useState(false);
@@ -268,22 +274,21 @@ export function WorkoutProgramsView({
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== "application/pdf") {
+      if (file.type !== "application/pdf" || file.size > 3 * 1024 * 1024) {
         setToast({
           id: Date.now().toString(),
           type: "error",
           title: "Invalid Document",
-          message: "Please select a valid .pdf file.",
+          message: "Please select a PDF no larger than 3 MB.",
         });
         return;
       }
       setPdfFile(file);
-      setPdfUrl(URL.createObjectURL(file));
       setToast({
         id: Date.now().toString(),
         type: "success",
-        title: "PDF Attached",
-        message: `${file.name} attached to routine.`,
+        title: "PDF Ready to Upload",
+        message: `${file.name} will upload when you save this routine.`,
       });
     }
   };
@@ -304,6 +309,15 @@ export function WorkoutProgramsView({
     setSaving(true);
 
     try {
+      let uploadedPdfPath: string | undefined;
+      if (pdfFile) {
+        const form = new FormData();
+        form.set("file", pdfFile);
+        const upload = await fetch(`/api/coach/document-upload?companyId=${encodeURIComponent(companyId)}&clientId=${encodeURIComponent(selectedClientId)}`, { method: "POST", body: form });
+        const document = await upload.json();
+        if (!upload.ok) throw new Error(document.error || "PDF upload failed; routine was not saved.");
+        uploadedPdfPath = document.storagePath;
+      }
       // 1. Build DayRoutine schedule array
       const scheduleArray: DayRoutine[] = DAYS_OF_WEEK.map((day) => ({
         day,
@@ -330,7 +344,7 @@ export function WorkoutProgramsView({
           fiber: fiber ? parseInt(fiber) : 30,
         } : undefined,
         schedule: scheduleArray,
-        pdf_url: pdfUrl || undefined,
+        pdf_url: uploadedPdfPath,
       };
 
       const res = await fetch("/api/coach/plans", {
@@ -725,7 +739,9 @@ export function WorkoutProgramsView({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <input
                 type="file"
-                accept=".pdf"
+                aria-label="PDF workout guide (up to 3 MB)"
+                accept="application/pdf"
+                disabled={saving || loadingPlan || !selectedClientId}
                 onChange={handlePdfChange}
                 className="text-xs text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border file:border-white/[0.08] file:bg-white/[0.04] file:text-white file:text-xs file:font-medium hover:file:bg-white/[0.08] file:cursor-pointer"
               />
@@ -741,6 +757,7 @@ export function WorkoutProgramsView({
                 </a>
               )}
             </div>
+            <p className="text-3xs text-zinc-500">Up to 3 MB. Uploaded privately when you save the routine.</p>
           </div>
 
           {/* =====================================================================

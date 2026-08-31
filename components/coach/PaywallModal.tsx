@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
+import React, { useState, useEffect, useRef } from "react";
+import { WhopCheckoutEmbed } from "@whop/checkout/react";
 import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 import {
   CheckCircle2,
@@ -10,7 +10,6 @@ import {
   ArrowRight,
   ArrowLeft,
   Check,
-  Sparkles
 } from "lucide-react";
 
 interface PaywallModalProps {
@@ -30,67 +29,81 @@ export function PaywallModal({
 }: PaywallModalProps) {
   // Step 1: "upgrade_card" (default) | Step 2: "checkout" (Inline Embed)
   const [step, setStep] = useState<"upgrade_card" | "checkout">("upgrade_card");
-  const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState("");
-
-  const directCheckoutUrl =
-    process.env.NEXT_PUBLIC_WHOP_CHECKOUT_URL ||
-    `https://whop.com/checkout/${process.env.NEXT_PUBLIC_WHOP_PRO_PLAN_ID || ""}`;
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [checkout, setCheckout] = useState<{ sessionId: string; planId: string; returnUrl: string } | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [confirming, setConfirming] = useState(false);
 
   // Reset step whenever modal is reopened
   useEffect(() => {
     if (isOpen) {
       setStep("upgrade_card");
-      setIsIframeLoading(true);
       setIsSuccess(false);
+      setVerificationMessage("");
+      setConfirming(false);
+      dialogRef.current?.showModal();
+    } else {
+      dialogRef.current?.close();
     }
   }, [isOpen]);
 
-  // Listen for Whop postMessage checkout completion
   useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
-      let trustedWhopOrigin = false;
-      try {
-        const host = new URL(event.origin).hostname;
-        trustedWhopOrigin = host === "whop.com" || host.endsWith(".whop.com");
-      } catch {}
-      if (
-        trustedWhopOrigin &&
-        event.data?.type === "whop:payment:success" ||
-        (trustedWhopOrigin && event.data?.action === "membership.activated") ||
-        (trustedWhopOrigin && event.data?.event === "checkout.completed")
-      ) {
-        try {
-          const response = await fetch(`/api/coach/clients?companyId=${encodeURIComponent(companyId)}`, { cache: "no-store" });
-          const result = await response.json();
-          if (!response.ok || result.paywallStatus?.plan !== "pro") {
-            setVerificationMessage("Payment confirmation is still processing. Refresh after confirmation; Pro unlocks only when the server confirms it.");
-            return;
-          }
-        } catch { setVerificationMessage("Could not verify your subscription. Refresh to check again."); return; }
-        setIsSuccess(true);
+    if (!isOpen || step !== "checkout") return;
+    const controller = new AbortController();
+    setCheckout(null);
+    setCheckoutError("");
+    fetch(`/api/coach/checkout?companyId=${encodeURIComponent(companyId)}`, { method: "POST", signal: controller.signal })
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Checkout could not be opened.");
+        if (!controller.signal.aborted) setCheckout(data);
+      })
+      .catch(error => { if (!controller.signal.aborted) setCheckoutError(error.message); });
+    return () => controller.abort();
+  }, [isOpen, step, companyId, retry]);
 
-        setTimeout(() => {
-          setIsSuccess(false);
-          onClose();
-          if (typeof window !== "undefined") {
-            window.location.reload();
-          }
-        }, 1500);
+  useEffect(() => {
+    if (!isOpen || !confirming) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    let attempts = 0;
+    const verify = async () => {
+      try {
+        const response = await fetch(`/api/coach/clients?companyId=${encodeURIComponent(companyId)}`, { cache: "no-store", signal: controller.signal });
+        const result = await response.json();
+        if (controller.signal.aborted) return;
+        if (response.ok && result.paywallStatus?.plan === "pro") {
+          setIsSuccess(true);
+          setConfirming(false);
+          setVerificationMessage("");
+          return;
+        }
+      } catch { if (controller.signal.aborted) return; }
+      if (++attempts < 8) timer = setTimeout(verify, 2000);
+      else {
+        setConfirming(false);
+        setVerificationMessage("Payment confirmation is still pending. Check again shortly; your Free workspace stays available. Do not pay again.");
       }
     };
+    void verify();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [isOpen, confirming, companyId]);
 
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [companyId, onClose, onSuccess]);
-
-  if (!isOpen) return null;
+  /* The embed callback only requests verification. A signed webhook must activate
+     the company's server-side entitlement before we display success. */
+  const confirmPayment = () => {
+    setVerificationMessage("Confirming your subscription with the FITz server…");
+    setConfirming(true);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 font-sans">
+    <dialog ref={dialogRef} aria-label="Upgrade to FITz Pro" onCancel={event => { event.preventDefault(); onClose(); }} className="m-auto w-[calc(100%-24px)] max-w-[520px] max-h-[90dvh] p-0 rounded-2xl bg-transparent text-zinc-100 backdrop:bg-black/85 backdrop:backdrop-blur-sm font-sans">
+      {isOpen &&
       <div
-        className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0c0c0e] text-zinc-100 shadow-2xl transition-all flex flex-col max-h-[90vh]"
+        className="relative w-full overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0c0c0e] text-zinc-100 shadow-2xl flex flex-col max-h-[90dvh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Control Bar */}
@@ -119,6 +132,7 @@ export function PaywallModal({
             <button
               type="button"
               onClick={onClose}
+              aria-label="Close upgrade checkout"
               className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -126,7 +140,7 @@ export function PaywallModal({
           </div>
         </div>
 
-        {verificationMessage && <p role="status" className="p-4 text-xs text-amber-200">{verificationMessage}</p>}
+        {verificationMessage && <div className="p-4 text-xs text-amber-200"><p role="status">{verificationMessage}</p>{!confirming && !isSuccess && <button type="button" onClick={confirmPayment} className="mt-2 text-blue-300 underline">Check payment status</button>}</div>}
         {/* Modal Body */}
         {isSuccess ? (
           /* Success Screen */
@@ -140,6 +154,7 @@ export function PaywallModal({
                 Your subscription has been activated. Up to 250 coaching clients and Pro tools are now unlocked.
               </p>
             </div>
+            <button type="button" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold" onClick={() => { onSuccess?.(); onClose(); window.location.reload(); }}>Back to dashboard</button>
           </div>
         ) : step === "upgrade_card" ? (
           /* =========================================================================
@@ -201,7 +216,7 @@ export function PaywallModal({
                 onClick={() => setStep("checkout")}
                 className="w-full py-3.5 px-4 rounded-xl bg-[#1a68ff] hover:bg-[#1556d6] active:scale-[0.98] text-white font-semibold text-xs sm:text-sm transition-all shadow-lg shadow-[#1a68ff]/25 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>View FITz Pro on Whop</span>
+                <span>Continue to secure checkout</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
               <div className="text-center">
@@ -215,16 +230,13 @@ export function PaywallModal({
           /* =========================================================================
              STEP 2: OFFICIAL INLINE WHOP CHECKOUT
              ========================================================================= */
-          <div className="relative w-full h-[620px] bg-[#0c0c0e] flex flex-col overflow-hidden animate-in fade-in duration-200">
-            <iframe
-              src={directCheckoutUrl}
-              title="Whop Checkout"
-              className="w-full h-full border-none flex-1 bg-[#0c0c0e]"
-              allow="payment *; clipboard-write *"
-            />
+          <div className="relative w-full min-h-64 bg-[#0c0c0e] overflow-y-auto p-4">
+            {checkoutError ? <div className="space-y-4 py-8 text-center"><p role="alert" className="text-sm text-zinc-300">{checkoutError}</p><button type="button" onClick={() => setRetry(value => value + 1)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold">Try again</button></div>
+              : checkout ? <WhopCheckoutEmbed sessionId={checkout.sessionId} planId={checkout.planId} theme="dark" skipRedirect returnUrl={checkout.returnUrl} onComplete={confirmPayment} onPaymentError={() => setVerificationMessage("Payment was not completed. Check the message in checkout and try again. Pro stays locked until payment is confirmed.")} />
+              : <div role="status" className="flex items-center justify-center gap-2 py-16 text-sm text-zinc-400"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />Opening secure checkout…</div>}
           </div>
         )}
-      </div>
-    </div>
+      </div>}
+    </dialog>
   );
 }
