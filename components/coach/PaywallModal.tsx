@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { loadWhop } from "@whop/elements";
+import { loadWhop, type WhopConstructor } from "@whop/elements";
 import { Checkout, CheckoutElement, WhopElements } from "@whop/elements-react";
 import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 import {
@@ -11,8 +11,6 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "lucide-react";
-
-const whopElements = loadWhop();
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -35,6 +33,13 @@ export function PaywallModal({
   const [checkout, setCheckout] = useState<{ checkoutConfiguration: string } | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [whopElements, setWhopElements] = useState<WhopConstructor | Promise<WhopConstructor | null> | null>(null);
+
+  // The Elements loader requires window/document. Start it only after hydration;
+  // calling loadWhop during Next.js server rendering returns a rejected promise.
+  useEffect(() => {
+    setWhopElements(loadWhop());
+  }, []);
 
   // Reset step whenever modal is reopened
   useEffect(() => {
