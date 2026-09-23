@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { loadWhop, type WhopConstructor } from "@whop/elements";
-import { Checkout, CheckoutElement, WhopElements } from "@whop/elements-react";
+import dynamic from "next/dynamic";
 import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 import {
   CheckCircle2,
@@ -11,6 +10,11 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "lucide-react";
+
+const WhopElementsCheckout = dynamic(
+  () => import("@/components/coach/WhopElementsCheckout"),
+  { ssr: false }
+);
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -33,13 +37,6 @@ export function PaywallModal({
   const [checkout, setCheckout] = useState<{ checkoutConfiguration: string } | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const [retry, setRetry] = useState(0);
-  const [whopElements, setWhopElements] = useState<WhopConstructor | Promise<WhopConstructor | null> | null>(null);
-
-  // The Elements loader requires window/document. Start it only after hydration;
-  // calling loadWhop during Next.js server rendering returns a rejected promise.
-  useEffect(() => {
-    setWhopElements(loadWhop());
-  }, []);
 
   // Reset step whenever modal is reopened
   useEffect(() => {
@@ -185,15 +182,10 @@ export function PaywallModal({
           <div className="relative w-full min-h-64 bg-[#0c0c0e] overflow-y-auto p-4">
             {checkoutError ? <div className="space-y-4 py-8 text-center"><p role="alert" className="text-sm text-zinc-300">{checkoutError}</p><button type="button" onClick={() => setRetry(value => value + 1)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold">Try again</button></div>
               : checkout ? (
-                <WhopElements
-                  elements={whopElements}
-                  appearance={{ theme: { appearance: "dark", accentColor: "blue", grayColor: "slate" } }}
-                  onLoadError={() => setCheckoutError("Whop checkout could not be loaded. Please try again.")}
-                >
-                  <Checkout checkoutConfiguration={checkout.checkoutConfiguration}>
-                    <CheckoutElement onError={() => setCheckoutError("Whop checkout could not be loaded. Please try again.")} />
-                  </Checkout>
-                </WhopElements>
+                <WhopElementsCheckout
+                  checkoutConfiguration={checkout.checkoutConfiguration}
+                  onError={() => setCheckoutError("Whop checkout could not be loaded. Please try again.")}
+                />
               )
               : <div role="status" className="flex items-center justify-center gap-2 py-16 text-sm text-zinc-400"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />Opening secure checkout…</div>}
           </div>
