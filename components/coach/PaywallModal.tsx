@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { WhopCheckoutEmbed } from "@whop/checkout/react";
+import { loadWhop } from "@whop/elements";
+import { Checkout, CheckoutElement, WhopElements } from "@whop/elements-react";
 import { FREE_TIER_CLIENT_LIMIT } from "@/lib/constants/plans";
 import {
   CheckCircle2,
@@ -9,8 +10,9 @@ import {
   Loader2,
   ArrowRight,
   ArrowLeft,
-  Check,
 } from "lucide-react";
+
+const whopElements = loadWhop();
 
 interface PaywallModalProps {
   isOpen: boolean;
@@ -29,21 +31,15 @@ export function PaywallModal({
 }: PaywallModalProps) {
   // Step 1: "upgrade_card" (default) | Step 2: "checkout" (Inline Embed)
   const [step, setStep] = useState<"upgrade_card" | "checkout">("upgrade_card");
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [verificationMessage, setVerificationMessage] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [checkout, setCheckout] = useState<{ sessionId: string; planId: string; returnUrl: string } | null>(null);
+  const [checkout, setCheckout] = useState<{ checkoutConfiguration: string } | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const [retry, setRetry] = useState(0);
-  const [confirming, setConfirming] = useState(false);
 
   // Reset step whenever modal is reopened
   useEffect(() => {
     if (isOpen) {
       setStep("upgrade_card");
-      setIsSuccess(false);
-      setVerificationMessage("");
-      setConfirming(false);
       dialogRef.current?.showModal();
     } else {
       dialogRef.current?.close();
@@ -64,40 +60,6 @@ export function PaywallModal({
       .catch(error => { if (!controller.signal.aborted) setCheckoutError(error.message); });
     return () => controller.abort();
   }, [isOpen, step, companyId, retry]);
-
-  useEffect(() => {
-    if (!isOpen || !confirming) return;
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    let attempts = 0;
-    const verify = async () => {
-      try {
-        const response = await fetch(`/api/coach/clients?companyId=${encodeURIComponent(companyId)}`, { cache: "no-store", signal: controller.signal });
-        const result = await response.json();
-        if (controller.signal.aborted) return;
-        if (response.ok && result.paywallStatus?.plan === "pro") {
-          setIsSuccess(true);
-          setConfirming(false);
-          setVerificationMessage("");
-          return;
-        }
-      } catch { if (controller.signal.aborted) return; }
-      if (++attempts < 8) timer = setTimeout(verify, 2000);
-      else {
-        setConfirming(false);
-        setVerificationMessage("Payment confirmation is still pending. Check again shortly; your Free workspace stays available. Do not pay again.");
-      }
-    };
-    void verify();
-    return () => { controller.abort(); clearTimeout(timer); };
-  }, [isOpen, confirming, companyId]);
-
-  /* The embed callback only requests verification. A signed webhook must activate
-     the company's server-side entitlement before we display success. */
-  const confirmPayment = () => {
-    setVerificationMessage("Confirming your subscription with the FITz server…");
-    setConfirming(true);
-  };
 
   return (
     <dialog ref={dialogRef} aria-label="Upgrade to FITz Pro" onCancel={event => { event.preventDefault(); onClose(); }} className="m-auto w-[calc(100%-24px)] max-w-[520px] max-h-[90dvh] p-0 rounded-2xl bg-transparent text-zinc-100 backdrop:bg-black/85 backdrop:backdrop-blur-sm font-sans">
@@ -140,23 +102,8 @@ export function PaywallModal({
           </div>
         </div>
 
-        {verificationMessage && <div className="p-4 text-xs text-amber-200"><p role="status">{verificationMessage}</p>{!confirming && !isSuccess && <button type="button" onClick={confirmPayment} className="mt-2 text-blue-300 underline">Check payment status</button>}</div>}
         {/* Modal Body */}
-        {isSuccess ? (
-          /* Success Screen */
-          <div className="p-8 flex flex-col items-center justify-center text-center space-y-4 py-16 animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-500/20">
-              <Check className="w-7 h-7 stroke-[2.5]" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white tracking-tight">Welcome to FITz Pro!</h3>
-              <p className="text-xs text-zinc-400 max-w-xs">
-                Your subscription has been activated. Up to 250 coaching clients and Pro tools are now unlocked.
-              </p>
-            </div>
-            <button type="button" className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold" onClick={() => { onSuccess?.(); onClose(); window.location.reload(); }}>Back to dashboard</button>
-          </div>
-        ) : step === "upgrade_card" ? (
+        {step === "upgrade_card" ? (
           /* =========================================================================
              STEP 1: THE UPGRADE CARD (Primary Initial Pop-up)
              ========================================================================= */
@@ -228,11 +175,21 @@ export function PaywallModal({
           </div>
         ) : (
           /* =========================================================================
-             STEP 2: OFFICIAL INLINE WHOP CHECKOUT
+             STEP 2: WHOP ELEMENTS CHECKOUT
              ========================================================================= */
           <div className="relative w-full min-h-64 bg-[#0c0c0e] overflow-y-auto p-4">
             {checkoutError ? <div className="space-y-4 py-8 text-center"><p role="alert" className="text-sm text-zinc-300">{checkoutError}</p><button type="button" onClick={() => setRetry(value => value + 1)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold">Try again</button></div>
-              : checkout ? <WhopCheckoutEmbed sessionId={checkout.sessionId} planId={checkout.planId} theme="dark" skipRedirect returnUrl={checkout.returnUrl} onComplete={confirmPayment} onPaymentError={() => setVerificationMessage("Payment was not completed. Check the message in checkout and try again. Pro stays locked until payment is confirmed.")} />
+              : checkout ? (
+                <WhopElements
+                  elements={whopElements}
+                  appearance={{ theme: { appearance: "dark", accentColor: "blue", grayColor: "slate" } }}
+                  onLoadError={() => setCheckoutError("Whop checkout could not be loaded. Please try again.")}
+                >
+                  <Checkout checkoutConfiguration={checkout.checkoutConfiguration}>
+                    <CheckoutElement onError={() => setCheckoutError("Whop checkout could not be loaded. Please try again.")} />
+                  </Checkout>
+                </WhopElements>
+              )
               : <div role="status" className="flex items-center justify-center gap-2 py-16 text-sm text-zinc-400"><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" />Opening secure checkout…</div>}
           </div>
         )}

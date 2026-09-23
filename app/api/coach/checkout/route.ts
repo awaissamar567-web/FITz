@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         metadata: checkoutMetadata(companyId, planId),
       });
       if (!checkout.id) throw new Error("Checkout configuration has no ID");
-      return NextResponse.json({ sessionId: checkout.id, planId, returnUrl }, { headers: { "Cache-Control": "private, no-store" } });
+      return NextResponse.json({ checkoutConfiguration: checkout.id }, { headers: { "Cache-Control": "private, no-store" } });
     } catch {
       // Do not serialize SDK errors: they may include request credentials.
       console.error("[Checkout] Whop checkout configuration creation failed");

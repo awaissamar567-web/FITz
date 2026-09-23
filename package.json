@@ -11,7 +11,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
     "@whop/app-sdk": "npm:@whop/sdk@^0.0.3",
-    "@whop/checkout": "^0.6.0",
+    "@whop/elements": "^1.0.0",
+    "@whop/elements-react": "^1.0.0",
     "@whop/react": "^0.1.0",
     "@whop/sdk": "^1.0.14",
     "lucide-react": "^0.475.0",

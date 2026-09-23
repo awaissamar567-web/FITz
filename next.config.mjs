@@ -10,7 +10,7 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://whop.com https://*.whop.com;",
+            value: "frame-ancestors 'self' https://whop.com https://*.whop.com; frame-src https://cdn.whop.com https://*.whop.com;",
           },
           {
             key: "X-Content-Type-Options",

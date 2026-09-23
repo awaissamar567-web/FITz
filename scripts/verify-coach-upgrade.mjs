@@ -81,7 +81,7 @@ const checkoutRoute = load("app/api/coach/checkout/route.ts", {
   "@/lib/rate-limiter": { checkRateLimit: () => ({ allowed: true }) },
   "@/lib/whop-sdk": { whopsdk: { checkoutConfigurations: { create: async body => { calls++; assert.equal(body.plan_id, "plan_testpro"); assert.equal(body.plan, undefined); assert.equal(billing.checkoutCompany(body.metadata, body.plan_id), "biz_buyer"); return { id: "ch_test" }; } } } },
 });
-check((await checkoutRoute.POST(req(null))).data.sessionId === "ch_test" && calls === 1, "checkout reuses existing plan with verified workspace binding");
+check((await checkoutRoute.POST(req(null))).data.checkoutConfiguration === "ch_test" && calls === 1, "Elements checkout reuses existing plan with verified workspace binding");
 allowed = false;
 check((await checkoutRoute.POST(req(null))).status === 403 && calls === 1, "non-admin cannot create checkout");
 allowed = true; company.plan = "pro";
